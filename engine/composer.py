@@ -1,22 +1,25 @@
 import os
-from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
+from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips, concatenate_audioclips
 
 def compose_final_video(processed_json, project_folder, output_path):
     video_clips = []
 
     for i, block in enumerate(processed_json["script"]):
         video_path = os.path.join(project_folder, block.get("video", ""))
-        audio_path = os.path.join(project_folder, block.get("audio", ""))
+        audio_paths = [os.path.join(project_folder, audio) for audio in block.get("audio", [])]
 
-        if not os.path.exists(video_path) or not os.path.exists(audio_path):
+        if not os.path.exists(video_path) or not all(os.path.exists(path) for path in audio_paths):
             print(f"⚠️ Skipping clip {i + 1} due to missing video or audio.")
             continue
 
         try:
             video_clip = VideoFileClip(video_path)
-            audio_clip = AudioFileClip(audio_path)
 
-            # Repeat video if it's shorter than audio
+            # Concatenate audio clips
+            audio_clips = [AudioFileClip(path) for path in audio_paths]
+            audio_clip = concatenate_audioclips(audio_clips)
+
+            # Repeat video if it's shorter than the total audio duration
             if video_clip.duration < audio_clip.duration:
                 repeat_count = int(audio_clip.duration // video_clip.duration) + 1
                 repeated_clip = concatenate_videoclips([video_clip] * repeat_count)
@@ -44,8 +47,7 @@ def compose_final_video(processed_json, project_folder, output_path):
         final_folder = os.path.dirname(output_path)
         os.makedirs(final_folder, exist_ok=True)
 
-        # final_video.write_videofile(output_path, codec="libx264", audio_codec="aac")
-
+        # Final video write
         final_video.write_videofile(
             output_path,
             codec="h264_videotoolbox",  # macOS GPU encoder

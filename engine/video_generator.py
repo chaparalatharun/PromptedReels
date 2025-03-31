@@ -27,7 +27,7 @@ def get_video_query_from_llm(script_text,theme):
         f"The keywords do not need to describe the entire script clip, The top priority is to search the top match video clip that can describe the audio."
     )
     payload = {
-        "model": "deepseek-ai/DeepSeek-R1 ",
+        "model": "deepseek-ai/DeepSeek-R1",
         "messages": [{"role": "user", "content": prompt}],
         "stream": False,
         "max_tokens": 512,
@@ -92,6 +92,9 @@ def generate_video_clip(data, project_path, reGen=True, theme = ""):
         query = get_video_query_from_llm(script,theme)
         print(f"[Pexels] Searching video with query: {query}")
         video_url = get_pexels_video_url(query)
+
+        data["script"][index]["video_search_prompt"] = query
+        data["script"][index]["video_search_result"] = video_url if video_url else "Not Found"
 
         if not video_url:
             print(f"❌ No video found for script: {script}")
