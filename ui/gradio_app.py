@@ -1,9 +1,8 @@
 import os
 import gradio as gr
-from functools import partial
 
-from engine.audio_generator import generate_tts_audio
-from engine.video_generator import generate_video_clip
+from audio_engine.audio_generator import generate_tts_audio
+from video_engine.video_generator import generate_video_clip
 from engine.composer import compose_final_video
 from engine.project_manager import create_project, save_json, load_json
 from engine.text_parser import split_script_to_chunks
@@ -135,44 +134,57 @@ def regenerate_line(project_name, line_index, text, video):
     save_json(data, os.path.join(project_path, "processed.json"))
     return f"Line {line_index+1} regenerated. Audio={data['script'][line_index]['audio']}"
 
-# UI logic to show/hide lines from current page
+
 def update_page_ui(edit_data, page_index, *line_inputs):
-    """
-    Updates the UI for the given page_index.
-    Each line has a group (group, text, video, audio) — need to show/hide all.
-    `line_inputs` contains all elements in the order:
-    [group0, text0, video0, audio0, group1, text1, video1, audio1, ...]
-    """
     if not edit_data:
-        return [
-            gr.update(visible=False, value="") for _ in line_inputs
-        ]
+        return [gr.update(visible=False, value="") for _ in line_inputs]
 
     script_blocks = edit_data["script"]
     total_lines = len(script_blocks)
     start_idx = page_index * LINES_PER_PAGE
-    end_idx = start_idx + LINES_PER_PAGE
 
     updates = []
     for i in range(LINES_PER_PAGE):
         line_num = start_idx + i
-        base_idx = i * 4  # group + 3 components
+        base_idx = i * (4 + 1 + MAX_AUDIO_PREVIEWS)
 
         if line_num < total_lines:
             block = script_blocks[line_num]
+            video_path = block.get("video", "")
+            audio_list = block.get("audio", [])
+
+            # generate relative paths for Gradio (assumes everything inside 'projects/')
+            video_preview_path = f"projects/{edit_data["title"]}/{video_path}" if video_path else None
+            audio_preview_paths = [f"projects/{edit_data["title"]}/{a}" for a in audio_list]
+
             updates.append(gr.update(visible=True))  # group
             updates.append(gr.update(visible=True, value=block.get("text", "")))  # text
-            updates.append(gr.update(visible=True, value=block.get("video", "")))  # video
-            audio_list = block.get("audio", [])
+            updates.append(gr.update(visible=True, value=video_path))  # video path textbox
+            updates.append(gr.update(visible=True, value=video_preview_path))  # video preview
+
             audio_str = ", ".join(audio_list) if audio_list else ""
-            updates.append(gr.update(visible=True, value=audio_str))  # audio
+            updates.append(gr.update(visible=True, value=audio_str))  # audio path textbox
+
+            for j in range(MAX_AUDIO_PREVIEWS):
+                if j < len(audio_preview_paths):
+                    updates.append(gr.update(visible=True, value=audio_preview_paths[j]))
+                else:
+                    updates.append(gr.update(visible=False, value=None))
         else:
-            updates.append(gr.update(visible=False))  # group
-            updates.append(gr.update(visible=False, value=""))  # text
-            updates.append(gr.update(visible=False, value=""))  # video
-            updates.append(gr.update(visible=False, value=""))  # audio
+            updates.extend([
+                gr.update(visible=False),         # group
+                gr.update(visible=False, value=""),  # text
+                gr.update(visible=False, value=""),  # video path
+                gr.update(visible=False, value=None),  # video player
+                gr.update(visible=False, value=""),  # audio path
+            ])
+            updates.extend([
+                gr.update(visible=False, value=None)
+                for _ in range(MAX_AUDIO_PREVIEWS)
+            ])
 
     return updates
+
 
 def save_page_edits(
     project_name,
@@ -327,20 +339,34 @@ with gr.Blocks() as demo:
         line_audios = []
         line_regen_buttons = []
 
-        line_groups = []  # 新增
+        line_groups = []
+        MAX_AUDIO_PREVIEWS = 3  # 每行最多展示3个音频
+
+        line_video_previews = []
+        line_audio_previews = []  # 每一行为一个列表，嵌套结构
 
         for i in range(LINES_PER_PAGE):
             with gr.Group(visible=False) as line_group:
                 gr.Markdown(f"**Line {i + 1} (on this page)**")
                 txt = gr.Textbox(label="Text", visible=False)
-                vid = gr.Textbox(label="Video", visible=False)
-                aud = gr.Textbox(label="Audio (comma-separated)", visible=False)
+
+                # video path input + preview
+                vid_path = gr.Textbox(label="Video Path", visible=False)
+                vid_player = gr.Video(label="Video Preview", visible=False)
+
+                # audio paths input + multiple previews
+                aud_path = gr.Textbox(label="Audio (comma-separated)", visible=False)
+                aud_players = [gr.Audio(label=f"Audio Preview {j + 1}", visible=False) for j in
+                               range(MAX_AUDIO_PREVIEWS)]
+
                 regen_btn = gr.Button(f"Regenerate line (this page slot {i + 1})")
 
-            line_groups.append(line_group)  # 新增
+            line_groups.append(line_group)
             line_textboxes.append(txt)
-            line_videos.append(vid)
-            line_audios.append(aud)
+            line_videos.append(vid_path)
+            line_audios.append(aud_path)
+            line_video_previews.append(vid_player)
+            line_audio_previews.append(aud_players)
             line_regen_buttons.append(regen_btn)
 
 
@@ -400,6 +426,21 @@ with gr.Blocks() as demo:
             max_page = (total_lines - 1) // LINES_PER_PAGE if total_lines > 0 else 0
             return f"Page {page_idx+1} of {max_page+1}"
 
+
+        # flatten all inputs: [txt, vid_path, aud_path, vid_preview, aud1, aud2, aud3]
+        page_inputs = []
+        page_outputs = []
+
+        for i in range(LINES_PER_PAGE):
+            page_inputs.extend([line_textboxes[i], line_videos[i], line_audios[i]])
+            page_inputs.append(line_video_previews[i])
+            page_inputs.extend(line_audio_previews[i])
+
+            page_outputs.extend([line_groups[i], line_textboxes[i], line_videos[i]])
+            page_outputs.append(line_video_previews[i])
+            page_outputs.extend([line_audios[i]])
+            page_outputs.extend(line_audio_previews[i])
+
         # after on_load_click sets data and page=0, we want to fill UI:
         load_btn.click(
             fn=on_load_click,
@@ -407,10 +448,8 @@ with gr.Blocks() as demo:
             outputs=[edit_data_state, page_state, save_status]
         ).then(
             fn=update_page_ui,
-            inputs=[edit_data_state, page_state] +
-                   sum([[t, v, a] for t, v, a in zip(line_textboxes, line_videos, line_audios)], []),
-
-            outputs=sum([[g, t, v, a] for g, t, v, a in zip(line_groups, line_textboxes, line_videos, line_audios)], [])
+            inputs=[edit_data_state, page_state] + page_inputs,
+            outputs = page_outputs
         ).then(
             fn=show_page_number,
             inputs=[page_state, edit_data_state],
@@ -433,10 +472,8 @@ with gr.Blocks() as demo:
             outputs=[edit_data_state, save_status],
         ).then(
             fn=update_page_ui,
-            inputs=[edit_data_state, page_state] +
-                   sum([[t, v, a] for t, v, a in zip(line_textboxes, line_videos, line_audios)], []),
-
-            outputs=sum([[g, t, v, a] for g, t, v, a in zip(line_groups, line_textboxes, line_videos, line_audios)], [])
+            inputs=[edit_data_state, page_state] + page_inputs,
+            outputs = page_outputs
         ).then(
             fn=show_page_number,
             inputs=[page_state, edit_data_state],
@@ -464,10 +501,8 @@ with gr.Blocks() as demo:
             outputs=[page_state],
         ).then(
             fn=update_page_ui,
-            inputs=[edit_data_state, page_state] +
-                   sum([[t, v, a] for t, v, a in zip(line_textboxes, line_videos, line_audios)], []),
-
-            outputs=sum([[g, t, v, a] for g, t, v, a in zip(line_groups, line_textboxes, line_videos, line_audios)], [])
+            inputs=[edit_data_state, page_state] + page_inputs,
+            outputs = page_outputs
         ).then(
             fn=show_page_number,
             inputs=[page_state, edit_data_state],
@@ -495,10 +530,8 @@ with gr.Blocks() as demo:
             outputs=[page_state],
         ).then(
             fn=update_page_ui,
-            inputs=[edit_data_state, page_state] +
-                   sum([[t, v, a] for t, v, a in zip(line_textboxes, line_videos, line_audios)], []),
-
-            outputs=sum([[g, t, v, a] for g, t, v, a in zip(line_groups, line_textboxes, line_videos, line_audios)], [])
+            inputs=[edit_data_state, page_state] + page_inputs,
+            outputs = page_outputs
         ).then(
             fn=show_page_number,
             inputs=[page_state, edit_data_state],
@@ -513,6 +546,7 @@ with gr.Blocks() as demo:
         )
 
 
-def launch_app():
-    # add share=True for public link
-    demo.launch(share=True)
+demo.launch(
+    share=True,
+    allowed_paths=["."]
+)

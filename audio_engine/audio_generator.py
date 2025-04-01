@@ -52,6 +52,13 @@ def generate_tts_audio(data, project_path, reGen=True):
             if os.path.exists(audio_file_path) and not reGen:
                 print(f"Audio exists, skipping: {audio_file_path}")
                 audio_filenames.append(f"audio/{audio_filename}")
+                # Calculate the duration of the current audio using pydub
+                audio_duration = get_audio_duration(audio_file_path)
+                start_time = current_time
+                end_time = current_time + audio_duration
+                srt_content.append(
+                    f"{len(srt_content) + 1}\n{format_time(start_time)} --> {format_time(end_time)}\n{clip}\n\n")
+                current_time = end_time
                 continue
 
             print(f"[TTS] Generating audio for: {clip}")
