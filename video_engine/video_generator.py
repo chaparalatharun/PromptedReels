@@ -1,7 +1,9 @@
 import os
+import time
 import requests
 from video_engine.llm_prompt import get_video_query_from_llm, ask_llm_decision
 from video_engine.pexels_api import get_pexels_video_url
+from video_engine.siliconflow_api import generate_siliconflow_video
 
 def generate_video_clip(data, project_path, reGen=True, theme=""):
     output_name = os.path.basename(project_path)
@@ -44,8 +46,21 @@ def generate_video_clip(data, project_path, reGen=True, theme=""):
                 print(f"✅ Saved video: {video_file_path}")
             except Exception as e:
                 print(f"❌ Error downloading video: {e}")
+
+        elif decision == "generate":
+            print(f"[SiliconFlow] Submitting video generation task for: {script}")
+            request_id = generate_siliconflow_video(script, size="1280x720")
+
+            if not request_id:
+                print(f"❌ Failed to get request ID for script: {script}")
+                block["video"] = "t2v_failed"
+                continue
+
+            block["video_generation_request_id"] = request_id
+            block["video"] = "t2v_pending"
+            print(f"✅ Request submitted. Request ID: {request_id}")
         else:
-            print(f"🧪 Text-to-video generation not implemented yet. Skipping: {script}")
-            block["video"] = "t2v_not_implemented"
+            print(f"❓ Unknown decision '{decision}' for: {script}")
+            block["video"] = "unknown_decision"
 
     return data

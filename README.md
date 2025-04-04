@@ -8,6 +8,7 @@ VideoAutoMaker is an automated AI-powered video generation pipeline that takes a
 - 🎬 Video Clip Search: Automatically queries matching Pexels stock video using an LLM prompt
 - 📥 HD Video Download: Pulls and saves the highest-quality mp4 from Pexels
 - 🧠 LLM-powered Scene Matching: Uses large language models to generate the most relevant search terms from natural language script
+- 🎞️ **Text-to-Video Generation**: Generate AI-created video clips directly from text using state-of-the-art text-to-video models
 - 📂 Folder-structured Output: Assets saved in organized `audio/` and `video/` folders
 - ✅ Ready for post-processing, subtitle alignment, and full video composition
 
@@ -15,11 +16,15 @@ VideoAutoMaker is an automated AI-powered video generation pipeline that takes a
 
 Your project will look like:
 
+```text
+my_project/
+├── audio/
+│   ├── myproj_1.mp3
+│   └── myproj_2.mp3
+├── video/
+│   ├── myproj_1.mp4
+│   └── myproj_2.mp4
 ```
-my_project/ ├── audio/ │ ├── myproj_1.mp3 │ └── myproj_2.mp3 ├── video/ │ ├── myproj_1.mp4 │ └── myproj_2.mp4
-```
-
-
 
 ## 🧩 Requirements
 
@@ -28,6 +33,7 @@ my_project/ ├── audio/ │ ├── myproj_1.mp3 │ └── myproj_2.m
   - ✅ TTS service URL (custom or commercial)
   - ✅ LLM service (e.g., [siliconflow.cn](https://api.siliconflow.cn))
   - ✅ [Pexels API key](https://www.pexels.com/api/)
+  - ✅ (Optional) Text-to-Video service key (e.g., Sora, Gen-2, etc.)
 
 ## 🚀 How It Works
 
@@ -54,7 +60,13 @@ generate_tts_audio(data, project_path="my_project")
 generate_video_clip(data, project_path="my_project")
 ```
 
-4. Resulting audio and video clips are saved and linked to `data["script"][i]["audio"]` and `["video"]`
+4. Optionally, generate text-to-video content:
+
+```python
+generate_text_to_video(data, project_path="my_project")
+```
+
+5. Resulting audio and video clips are saved and linked to `data["script"][i]["audio"]` and `["video"]`
 
 ## 🔐 API Configuration
 
@@ -66,6 +78,7 @@ LLM_API_HEADERS = {
   "Authorization": "Bearer your_llm_token",
   "Content-Type": "application/json"
 }
+TEXT2VIDEO_API_KEY = "your_text2video_key"
 ```
 
 ## 🧠 LLM Prompt Format
@@ -89,3 +102,4 @@ Powered by GPT, Pexels, and open tools.
 ## 📄 License
 
 MIT License.
+
