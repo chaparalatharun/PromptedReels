@@ -25,6 +25,27 @@ def add_subtitles_with_ffmpeg(input_path, srt_path, output_path, font_name="WenQ
         print(f"❌ Failed to add subtitles with FFmpeg: {e}")
 
 
+from moviepy.editor import *
+import moviepy.video.fx.all as vfx
+
+def resize_and_crop(clip, target_size=(1280, 720)):
+    """Resize and crop video clip to match target_size (w, h)."""
+    # Scale clip while keeping aspect ratio
+    clip = clip.fx(vfx.resize, height=target_size[1])
+    w, h = clip.size
+
+    if w > target_size[0]:
+        x_center = w // 2
+        x1 = x_center - target_size[0] // 2
+        x2 = x1 + target_size[0]
+        clip = clip.crop(x1=x1, x2=x2)
+    elif w < target_size[0]:
+        # Optional: add black bars instead of crop
+        clip = clip.fx(vfx.resize, width=target_size[0])
+
+    return clip.set_position(("center", "center"))
+
+
 def compose_final_video(processed_json, project_folder, output_path, insert_subtitle=True):
     temp_no_sub_path = output_path.replace(".mp4", "_nosub.mp4")
     subtitle_path = os.path.join(project_folder, "subtitles.srt")
@@ -40,7 +61,11 @@ def compose_final_video(processed_json, project_folder, output_path, insert_subt
             continue
 
         try:
+
             video_clip = VideoFileClip(video_path)
+            # 替换 video_clip 赋值后的部分
+            video_clip = resize_and_crop(video_clip, target_size=(1280, 720))
+
             audio_clips = [AudioFileClip(path) for path in audio_paths]
             audio_clip = concatenate_audioclips(audio_clips)
 

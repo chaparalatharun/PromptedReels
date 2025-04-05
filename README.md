@@ -8,11 +8,8 @@ VideoAutoMaker is an automated AI-powered video generation pipeline that takes a
 - Audio Model: **GPT-SoVITS(Fine-Tuning)**
 - LLM Model: **DeepSeekV3**
 
-<video width="640" height="360" controls>
-  <source src="example/chinese.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
-
+📺 **Example video (Chinese):**  
+**[demo video](https://www.youtube.com/watch?v=RjH_D1CPzps)**
 
 
 ## ✨ Features
