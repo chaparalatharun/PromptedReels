@@ -109,8 +109,3 @@ The prompt sent to LLM looks like:
 
 Built with ❤️ for creative automation.  
 Powered by GPT, Pexels, and open tools.
-
-## 📄 License
-
-MIT License.
-
