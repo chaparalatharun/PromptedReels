@@ -4,7 +4,7 @@ from pydub import AudioSegment
 import re
 
 # === TTS Server Config ===
-TTS_SERVER_IP = "168.4.124.31"
+TTS_SERVER_IP = "168.4.121.232"
 TTS_PORT = 9880
 TTS_URL = f"http://{TTS_SERVER_IP}:{TTS_PORT}/tts?"
 

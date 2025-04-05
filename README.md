@@ -2,6 +2,19 @@
 
 VideoAutoMaker is an automated AI-powered video generation pipeline that takes a script and turns it into fully-formed video segments with matching visuals, TTS audio, and metadata — ready for platforms like YouTube, TikTok, and Bilibili.
 
+## Example
+
+- Text-To-Video Model: **Wan-AI/Wan2.1-T2V-14B-Turbo**
+- Audio Model: **GPT-SoVITS(Fine-Tuning)**
+- LLM Model: **DeepSeekV3**
+
+<video width="640" height="360" controls>
+  <source src="example/chinese.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+
+
 ## ✨ Features
 
 - 🔊 Text-to-Speech: Converts script text into audio using a customizable TTS model (e.g., AI 老高)
