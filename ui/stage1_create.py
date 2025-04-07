@@ -5,19 +5,39 @@ from engine.text_parser import split_script_to_chunks
 
 projects_dir = "projects"
 
+
 def get_project_choices():
     return [
         p for p in os.listdir(projects_dir)
         if not p.startswith(".") and os.path.isdir(os.path.join(projects_dir, p))
     ]
 
+
+def parse_script_line(line):
+    if ":" in line:
+        name, content = line.split(":", 1)
+        return {
+            "character": name.strip(),
+            "picture": "random",
+            "text": content.strip()
+        }
+    else:
+        return {
+            "character": "",
+            "picture": "random",
+            "text": line.strip()
+        }
+
+
 def create_fn(name, theme, script):
     path = create_project(name)
     chunks = split_script_to_chunks(script)
+    script_data = [parse_script_line(c) for c in chunks]
+
     json_data = {
         "title": name,
         "theme": theme,
-        "script": [{"text": c} for c in chunks]
+        "script": script_data
     }
     save_json(json_data, os.path.join(path, "input.json"))
     return f"Created project '{name}' with {len(chunks)} chunks."
@@ -38,6 +58,3 @@ def build_stage1_ui():
             outputs=[output]
         )
     return demo
-
-
-

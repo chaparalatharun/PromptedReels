@@ -39,6 +39,12 @@ def autofill_title(project_name):
     return gr.update(value="")
 
 
+def refresh_dropdown_and_reset():
+    choices = get_project_choices()
+    return gr.update(choices=choices, value=None)
+
+
+
 def build_stage2_ui():
     with gr.Blocks() as demo:
         project_selector2 = gr.Dropdown(label="Select Project", choices=get_project_choices(), interactive=True)
@@ -50,11 +56,7 @@ def build_stage2_ui():
         gen_status = gr.Textbox(label="Generation Status")
 
         refresh_btn.click(
-            fn=get_project_choices,
-            inputs=[],
-            outputs=[project_selector2]
-        ).then(
-            fn=lambda: gr.update(value=None),
+            fn=refresh_dropdown_and_reset,
             inputs=[],
             outputs=[project_selector2]
         )
