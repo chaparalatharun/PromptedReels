@@ -1,9 +1,10 @@
 import os
-import requests
 import re
+
+import requests
 import yaml
 from dotenv import load_dotenv
-from pydub import AudioSegment
+from pydub.utils import mediainfo
 
 load_dotenv()
 
@@ -41,7 +42,6 @@ def format_time(seconds):
     hours, mins = divmod(mins, 60)
     return f"{int(hours):02}:{int(mins):02}:{int(secs):02},{int((seconds % 1) * 1000):03}"
 
-from pydub.utils import mediainfo
 def get_audio_duration(audio_path: str) -> float:
     try:
         info = mediainfo(audio_path)

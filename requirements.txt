@@ -2,3 +2,7 @@ gradio~=5.22.0
 moviepy~=1.0.3
 requests~=2.32.3
 python-dotenv~=1.0.1
+fastapi~=0.115.11
+pydantic~=2.10.6
+PyYAML~=6.0.2
+pydub~=0.25.1
