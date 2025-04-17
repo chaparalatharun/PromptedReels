@@ -1,7 +1,37 @@
 import os
 import json
+from engine.text_parser import split_script_to_chunks
 
-def create_project(name):
+
+def parse_script_line(line):
+    if ":" in line:
+        name, content = line.split(":", 1)
+        return {
+            "character": name.strip(),
+            "picture": "random",
+            "text": content.strip()
+        }
+    else:
+        return {
+            "character": "",
+            "picture": "random",
+            "text": line.strip()
+        }
+
+def create_project(name, theme, script):
+    path = create_fn(name)
+    chunks = split_script_to_chunks(script)
+    script_data = [parse_script_line(c) for c in chunks]
+
+    json_data = {
+        "title": name,
+        "theme": theme,
+        "script": script_data
+    }
+    save_json(json_data, os.path.join(path, "input.json"))
+    return f"Created project '{name}' with {len(chunks)} chunks."
+
+def create_fn(name):
     base = os.path.join("projects", name)
     os.makedirs(base, exist_ok=True)
     os.makedirs(os.path.join(base, "audio"), exist_ok=True)

@@ -1,8 +1,8 @@
 import os
 import gradio as gr
+
+from engine.MediaProcessor import MediaProcessor
 from engine.project_manager import load_json, save_json
-from audio_engine.audio_generator import generate_tts_audio
-from video_engine.video_generator import generate_video_clip
 
 projects_dir = "projects"
 
@@ -12,18 +12,35 @@ def get_project_choices():
         if not p.startswith(".") and os.path.isdir(os.path.join(projects_dir, p))
     ]
 
+# def generate_media_deprecated(project_name, reGen_AU_checkbox, reGen_VI_checkbox, video_title):
+#     if not project_name:
+#         return "No project selected"
+#     project_path = os.path.join(projects_dir, project_name)
+#     input_path = os.path.join(project_path, "input.json")
+#     data = load_json(input_path)
+#
+#     generate_video_clip(data, project_path, reGen=reGen_VI_checkbox, theme=video_title)
+#     generate_tts_audio(data, project_path, reGen=reGen_AU_checkbox)
+#
+#     save_json(data, os.path.join(project_path, "processed.json"))
+#     return f"Media generated for project: {project_name} (Regenerate audio={reGen_AU_checkbox}, video={reGen_VI_checkbox})"
+
 def generate_media(project_name, reGen_AU_checkbox, reGen_VI_checkbox, video_title):
     if not project_name:
         return "No project selected"
-    project_path = os.path.join(projects_dir, project_name)
-    input_path = os.path.join(project_path, "input.json")
-    data = load_json(input_path)
 
-    generate_video_clip(data, project_path, reGen=reGen_VI_checkbox, theme=video_title)
-    generate_tts_audio(data, project_path, reGen=reGen_AU_checkbox)
+    processor = MediaProcessor(
+        project_name=project_name,
+        projects_dir=projects_dir,
+        reGen_audio=reGen_AU_checkbox,
+        reGen_video=reGen_VI_checkbox,
+        theme=video_title
+    )
 
-    save_json(data, os.path.join(project_path, "processed.json"))
-    return f"Media generated for project: {project_name} (Regenerate audio={reGen_AU_checkbox}, video={reGen_VI_checkbox})"
+    processor.process_all()
+    return f"✅ Media generated for project: {project_name} (Audio: {reGen_AU_checkbox}, Video: {reGen_VI_checkbox})"
+
+
 
 def autofill_title(project_name):
     # 如果传入的是列表，取第一个元素

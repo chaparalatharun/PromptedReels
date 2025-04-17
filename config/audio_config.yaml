@@ -1,0 +1,22 @@
+characters:
+  Stewie:
+    gpt_weights: GPT_SoVITS/pretrained_models/stewie_gpt.ckpt
+    sovits_weights: GPT_SoVITS/pretrained_models/stewie_sovits.pth
+    emotions:
+      愤怒:
+        ref_audio_path: "assets/Stewie/anger_1.wav"
+        prompt_text: "我才不会容忍这种行为！你疯了吗？"
+      悲伤:
+        ref_audio_path: "assets/Stewie/sad_1.wav"
+        prompt_text: "唉，也许我们注定无法改变什么。"
+
+  Brian:
+    gpt_weights: GPT_SoVITS/pretrained_models/brian_gpt.ckpt
+    sovits_weights: GPT_SoVITS/pretrained_models/brian_sovits.pth
+    emotions:
+      愤怒:
+        ref_audio_path: "assets/Brian/angry.wav"
+        prompt_text: "别再说了，我已经忍够了。"
+      开心:
+        ref_audio_path: "assets/Brian/happy.wav"
+        prompt_text: "哈哈，这太有趣了，真的。"

@@ -1,8 +1,14 @@
 import os
 import subprocess
+import random
+
 from moviepy.editor import (
     VideoFileClip, AudioFileClip, concatenate_videoclips, concatenate_audioclips
 )
+# from moviepy.editor import *
+import moviepy.video.fx.all as vfx
+from moviepy.video.VideoClip import ImageClip
+from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
 
 
 def add_subtitles_with_ffmpeg(input_path, srt_path, output_path, font_name="WenQuanYi Micro Hei", font_size=28):
@@ -25,8 +31,6 @@ def add_subtitles_with_ffmpeg(input_path, srt_path, output_path, font_name="WenQ
         print(f"❌ Failed to add subtitles with FFmpeg: {e}")
 
 
-from moviepy.editor import *
-import moviepy.video.fx.all as vfx
 
 def resize_and_crop(clip, target_size=(1280, 720)):
     """Resize and crop video clip to match target_size (w, h)."""
@@ -66,18 +70,52 @@ def compose_final_video(processed_json, project_folder, output_path, insert_subt
             # 替换 video_clip 赋值后的部分
             video_clip = resize_and_crop(video_clip, target_size=(1280, 720))
 
+            # 添加角色图像
+            character = block.get("character", "")
+            picture = block.get("picture", "random")
+            character_folder = os.path.join("assets", character)
+
+            # 解析角色图像路径
+            if picture == "random":
+                images = [f for f in os.listdir(character_folder) if f.endswith((".jpg", ".png"))]
+                if not images:
+                    print(f"⚠️ No images found for character {character}.")
+                    continue
+                picture_file = random.choice(images)
+            else:
+                picture_file = picture if picture.endswith((".jpg", ".png")) else picture + ".jpg"
+
+            picture_path = os.path.join(character_folder, picture_file)
+
+            # 创建图像剪辑
+            if not os.path.exists(picture_path):
+                print(f"⚠️ Picture file not found: {picture_path}")
+                continue
+
+            img_clip = (
+                ImageClip(picture_path)
+                .set_duration(video_clip.duration)
+                .resize(width=video_clip.w * 0.2)  # 缩放到占视频宽度 20%
+                .set_position(("left", "bottom"))
+            )
+
+            # 合并视频和图像
+            video_with_img = CompositeVideoClip([video_clip, img_clip])
+
+            # 合并音频
             audio_clips = [AudioFileClip(path) for path in audio_paths]
             audio_clip = concatenate_audioclips(audio_clips)
 
-            if video_clip.duration < audio_clip.duration:
-                repeat_count = int(audio_clip.duration // video_clip.duration) + 1
-                video_clip = concatenate_videoclips([video_clip] * repeat_count)
-            video_clip = video_clip.subclip(0, audio_clip.duration)
+            if video_with_img.duration < audio_clip.duration:
+                repeat_count = int(audio_clip.duration // video_with_img.duration) + 1
+                video_with_img = concatenate_videoclips([video_with_img] * repeat_count)
 
-            final_clip = video_clip.set_audio(audio_clip)
+            video_with_img = video_with_img.subclip(0, audio_clip.duration)
+            final_clip = video_with_img.set_audio(audio_clip)
 
             video_clips.append(final_clip)
-            print(f"✅ Processed clip {i + 1}")
+            print(f"✅ Processed clip {i + 1} with character {character}")
+
 
         except Exception as e:
             print(f"❌ Error processing clip {i + 1}: {e}")

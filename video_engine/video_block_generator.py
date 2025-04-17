@@ -13,7 +13,7 @@ from video_engine.siliconflow_api import (
 )
 
 
-def generate_video_for_block(block, project_path, index, theme="", reGen=True):
+def generate_video_for_block(block, project_path, index, theme="", reGen=True, pre_decision = None):
     script = block["text"]
     output_name = os.path.basename(project_path)
     output_video = os.path.join(project_path, "video")
@@ -28,9 +28,12 @@ def generate_video_for_block(block, project_path, index, theme="", reGen=True):
         block["video"] = f"video/{video_filename}"
         return
 
-    print(f"[LLM] Deciding method for: {script}")
-    decision = ask_llm_decision(script, theme)
-    block["video_generation_method"] = decision
+    # 决定搜索视频还是生成视频
+    decision = pre_decision
+    if pre_decision is None or pre_decision!= "search" or pre_decision != "generate":
+        print(f"[LLM] Deciding method for: {script}")
+        decision = ask_llm_decision(script, theme)
+        block["video_generation_method"] = decision
 
     if decision == "search":
         query = get_video_query_from_llm(script, theme)
@@ -57,6 +60,7 @@ def generate_video_for_block(block, project_path, index, theme="", reGen=True):
             block["video"] = "download_failed"
 
     elif decision == "generate":
+        pass
         print(f"[SiliconFlow] Submitting generation task for: {script}")
         query = get_text_to_image_prompt_from_llm(script)
         print(f"[SiliconFlow] Prompt: {query}")

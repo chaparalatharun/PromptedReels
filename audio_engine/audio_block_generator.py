@@ -1,12 +1,22 @@
 import os
 import requests
 import re
+import yaml
+from dotenv import load_dotenv
 from pydub import AudioSegment
 
-TTS_SERVER_IP = "168.4.121.232"
-TTS_PORT = 9880
+load_dotenv()
+
+# === TTS Server Config ===
+TTS_SERVER_IP =  os.getenv("TTS_SERVER_IP")
+TTS_PORT =  os.getenv("TTS_PORT")
 TTS_URL = f"http://{TTS_SERVER_IP}:{TTS_PORT}/tts?"
 
+# Load audio config
+with open("./config/audio_config.yaml", "r", encoding="utf-8") as f:
+    AUDIO_CONFIG = yaml.safe_load(f)
+
+# Default TTS params (mutable copy will be used)
 DEFAULT_TTS_PARAMS = {
     "text_lang": "zh",
     "cut_punc": "。，？",
@@ -41,13 +51,44 @@ def get_audio_duration(audio_path):
         return 0
 
 
+def switch_character_model(character: str, emotion: str):
+    char_cfg = AUDIO_CONFIG.get("characters", {}).get(character)
+    if not char_cfg:
+        print(f"⚠️ No config found for character: {character}")
+        return
+
+    try:
+        if "gpt_weights" in char_cfg:
+            requests.get(f"http://{TTS_SERVER_IP}:{TTS_PORT}/set_gpt_weights", params={"weights_path": char_cfg["gpt_weights"]})
+        if "sovits_weights" in char_cfg:
+            requests.get(f"http://{TTS_SERVER_IP}:{TTS_PORT}/set_sovits_weights", params={"weights_path": char_cfg["sovits_weights"]})
+        print(f"✅ Switched models for {character}")
+    except Exception as e:
+        print(f"❌ Error switching models: {e}")
+
+    # Update global TTS params
+    emotion_cfg = char_cfg.get("emotions", {}).get(emotion)
+    if not emotion_cfg:
+        print(f"⚠️ No emotion config for {character} - {emotion}")
+        return
+
+    DEFAULT_TTS_PARAMS["ref_audio_path"] = emotion_cfg.get("ref_audio_path", DEFAULT_TTS_PARAMS["ref_audio_path"])
+    DEFAULT_TTS_PARAMS["prompt_text"] = emotion_cfg.get("prompt_text", DEFAULT_TTS_PARAMS["prompt_text"])
+
+
 def generate_audio_for_block(block, project_path, index, output_name=None, reGen=True, current_time=0):
-    """Generate audio clips for a block. Returns list of SRT segment strings and the updated current_time."""
+    """Generate audio clips for a block. Returns list of SRT segment strings and updated current_time."""
     if output_name is None:
         output_name = os.path.basename(project_path)
 
     output_audio = os.path.join(project_path, "audio")
     os.makedirs(output_audio, exist_ok=True)
+
+    character = block.get("character", "default")
+    emotion = block.get("emotion", "愤怒")
+
+    # Switch speaker before processing
+    switch_character_model(character, emotion)
 
     script = block["text"]
     clips = split_text_into_clips(script)
@@ -75,7 +116,6 @@ def generate_audio_for_block(block, project_path, index, output_name=None, reGen
             except Exception as e:
                 print(f"❌ Error requesting TTS: {e}")
 
-        # 无论是否新生成，尝试计算时长
         duration = get_audio_duration(audio_file_path)
         start_time = current_time
         end_time = current_time + duration
@@ -86,6 +126,5 @@ def generate_audio_for_block(block, project_path, index, output_name=None, reGen
             f"{len(srt_segments) + 1}\n{format_time(start_time)} --> {format_time(end_time)}\n{clip}\n\n"
         )
 
-    # 存入 block["audio"]
     block["audio"] = audio_filenames
     return srt_segments, current_time
