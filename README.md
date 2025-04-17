@@ -2,30 +2,36 @@
 
 VideoAutoMaker is an automated AI-powered video generation pipeline that takes a script and turns it into fully-formed video segments with matching visuals, TTS audio, and metadata — ready for platforms like YouTube, TikTok, and Bilibili.
 
-## Example
-
 - Text-To-Video Model: **Wan-AI/Wan2.1-T2V-14B-Turbo**
 - Audio Model: **GPT-SoVITS(Fine-Tuning)**
 - LLM Model: **DeepSeekV3**
+
+## 🖼️ Web UI Preview
+
+![UI Screenshot](example/picture/ui1.png) <!-- replace with actual image path -->
 
 📺 **Example video (Chinese):**
 
 [![Watch the demo video](https://img.youtube.com/vi/RjH_D1CPzps/0.jpg)](https://www.youtube.com/watch?v=RjH_D1CPzps)
 
 
+---
+
 ## ✨ Features
 
-- 🔊 Text-to-Speech: Converts script text into audio using a customizable TTS model (e.g., AI 老高)
-- 🎬 Video Clip Search: Automatically queries matching Pexels stock video using an LLM prompt
-- 📥 HD Video Download: Pulls and saves the highest-quality mp4 from Pexels
-- 🧠 LLM-powered Scene Matching: Uses large language models to generate the most relevant search terms from natural language script
-- 🎞️ **Text-to-Video Generation**: Generate AI-created video clips directly from text using state-of-the-art text-to-video models
-- 📂 Folder-structured Output: Assets saved in organized `audio/` and `video/` folders
-- ✅ Ready for post-processing, subtitle alignment, and full video composition
+- 🔊 **Text-to-Speech**: Converts script into speech using GPT-SoVITS or fine-tuned character voices
+- 🎬 **Visual Matching**: LLM-generated search terms fetch relevant video clips from Pexels
+- 📥 **HD Video Download**: Auto fetches the best matching stock videos
+- 🧠 **Scene Matching with LLM**: Script lines become high-quality video prompts
+- 🎞️ **Text-to-Video Generation**: Uses models like Open-Sora for AI-generated visuals
+- ✅ **JSON + Media Pipeline**: Supports block-level audio/video regeneration
+- ⚙️ **FastAPI-based Control**: Full programmatic control via RESTful endpoints
+
+---
 
 ## 📦 Folder Structure
 
-Your project will look like:
+Your project output will look like:
 
 ```text
 my_project/
@@ -35,53 +41,23 @@ my_project/
 ├── video/
 │   ├── myproj_1.mp4
 │   └── myproj_2.mp4
+├── processed.json
+└── subtitles.srt
 ```
 
-## 🧩 Requirements
+---
 
-- Python 3.9+
-- API Keys:
-  - ✅ TTS service URL (custom or commercial)
-  - ✅ LLM service (e.g., [siliconflow.cn](https://api.siliconflow.cn))
-  - ✅ [Pexels API key](https://www.pexels.com/api/)
-  - ✅ (Optional) Text-to-Video service key (e.g., Sora, Gen-2, etc.)
+## 🧠 LLM Prompt Format
 
-## 🚀 How It Works
-
-1. Prepare a `data` dictionary like:
-
-```python
-data = {
-  "script": [
-    {"text": "The universe began with a bang."},
-    {"text": "Life formed in oceans billions of years ago."}
-  ]
-}
+```text
+"Given a text script clip, I want to search the corresponding video clip that can match the script, for presentation. Give me the video searching sentence in Pexels API."
 ```
 
-2. Run the TTS pipeline:
-
-```python
-generate_tts_audio(data, project_path="my_project")
-```
-
-3. Then run the video generation pipeline:
-
-```python
-generate_video_clip(data, project_path="my_project")
-```
-
-4. Optionally, generate text-to-video content:
-
-```python
-generate_text_to_video(data, project_path="my_project")
-```
-
-5. Resulting audio and video clips are saved and linked to `data["script"][i]["audio"]` and `["video"]`
+---
 
 ## 🔐 API Configuration
 
-Update your API keys in your Python environment:
+Update your environment or config with keys:
 
 ```python
 PEXELS_API_KEY = "your_pexels_key"
@@ -92,20 +68,110 @@ LLM_API_HEADERS = {
 TEXT2VIDEO_API_KEY = "your_text2video_key"
 ```
 
-## 🧠 LLM Prompt Format
+---
 
-The prompt sent to LLM looks like:
+## 🧪 API Endpoints (FastAPI)
 
-> "Given a text script clip, I want to search the corresponding video clip that can match the script, for presentation. Give me the video searching sentence in Pexels API."
+Start server:
 
-## 🗂️ Future Work
+```bash
+python start_server.py
+```
 
-- Add subtitle generation (Whisper)
-- Add ffmpeg auto video-audio merge
-- Add background music / B-roll insertion
-- Fully automate YouTube/Bilibili uploads
+### ✅ 1. List Projects
+
+```bash
+curl http://localhost:8000/projects
+```
+
+### ✅ 2. Create a Project
+
+```bash
+curl -X POST http://localhost:8000/create_project \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project_name": "demo_project",
+    "theme": "宇宙起源",
+    "script": "宇宙诞生于一次大爆炸。\\n生命起源于海洋。"
+}'
+```
+
+### ✅ 3. Generate Media
+
+```bash
+curl -X POST http://localhost:8000/generate_media \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project_name": "demo_project",
+    "reGen_audio": true,
+    "reGen_video": true,
+    "theme": "AI Documentary"
+}'
+```
+
+### ✅ 4. Process a Single Block
+
+```bash
+curl -X POST http://localhost:8000/process_block \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project_name": "demo_project",
+    "block_index": 0,
+    "reGen_audio": true,
+    "reGen_video": false
+}'
+```
+
+### ✅ 5. Get Project JSON
+
+```bash
+curl http://localhost:8000/project_json/demo_project
+```
+
+### ✅ 6. Update Project JSON
+
+```bash
+curl -X POST http://localhost:8000/update_project_json \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project_name": "demo_project",
+    "data": {
+      "theme": "Updated Theme",
+      "script": [{"text": "New narration line", "character": "Narrator"}]
+    }
+}'
+```
+
+### ✅ 7. Compose Final Video
+
+```bash
+curl -X POST "http://localhost:8000/compose?project_name=demo_project"
+```
+
+---
+
+## 🧩 Requirements
+
+- Python 3.9+
+- Docker (optional)
+- API Keys:
+  - TTS endpoint (e.g., GPT-SoVITS)
+  - Pexels video API
+  - LLM (e.g., DeepSeek, Claude)
+  - (Optional) Text-to-video service like Open-Sora, Gen-2
+
+---
+
+## 🚧 Future Improvements
+
+- Subtitle timestamp smoothing (via Whisper)
+- FFmpeg-based auto merge (video + audio + srt)
+- Music / ambient tracks
+- Full pipeline: YouTube/Bilibili upload
+
+---
 
 ## 💡 Credits
 
-Built with ❤️ for creative automation.  
-Powered by GPT, Pexels, and open tools.
+Built with ❤️ by NP_123
+Powered by GPT, Pexels, and open tools like SoVITS and FastAPI.
