@@ -17,6 +17,14 @@ VideoAutoMaker is an automated AI-powered video generation pipeline that takes a
 
 ---
 
+## 📄 Project Paper
+
+We’ve written a paper describing the full pipeline, model integration, and design principles.
+
+[📄 Read the full paper (PDF)](example/paper/paper.pdf)
+
+---
+
 ## ✨ Features
 
 - 🔊 **Text-to-Speech**: Converts script into speech using GPT-SoVITS or fine-tuned character voices
