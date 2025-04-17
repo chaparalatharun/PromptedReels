@@ -15,6 +15,10 @@ from engine.project_manager import create_project, load_json
 
 app = FastAPI()
 
+@app.get("/")
+def root():
+    return {"message": "Hello from FastAPI!"}
+
 # Allow CORS for all domains (you can customize this!)
 app.add_middleware(
     CORSMiddleware,

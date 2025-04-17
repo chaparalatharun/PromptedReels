@@ -1,8 +1,8 @@
 import os
 
-from audio_engine.audio_block_generator import generate_audio_for_block
+from audio_engine import generate_audio_for_block
 from engine.project_manager import load_json, save_json
-from video_engine.video_block_generator import generate_video_for_block
+from video_engine import generate_video_for_block
 
 
 class MediaProcessor:

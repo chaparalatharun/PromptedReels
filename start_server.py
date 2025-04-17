@@ -1,13 +1,12 @@
-# start_server.py
-
+# start_server.py (in root)
 import uvicorn
 
 def main():
     uvicorn.run(
-        "api:app",              # Module:App reference
-        host="0.0.0.0",         # Bind to all interfaces
-        port=8000,              # Change if needed
-        reload=True,            # Auto-reload on file changes (dev only)
+        "api.api:app",          # ← Add one more `api.` to reach the actual file
+        host="0.0.0.0",
+        port=8000,
+        reload=True
     )
 
 if __name__ == "__main__":
