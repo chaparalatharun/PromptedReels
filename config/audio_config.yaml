@@ -1,22 +1,22 @@
 characters:
   Stewie:
-    gpt_weights: GPT_SoVITS/pretrained_models/stewie_gpt.ckpt
-    sovits_weights: GPT_SoVITS/pretrained_models/stewie_sovits.pth
+    gpt_weights: GPT_weights_v2/Stewie-e20.ckpt
+    sovits_weights: SoVITS_weights_v2/Stewie_e20_s1900.pth
     emotions:
-      愤怒:
-        ref_audio_path: "assets/Stewie/anger_1.wav"
-        prompt_text: "我才不会容忍这种行为！你疯了吗？"
-      悲伤:
-        ref_audio_path: "assets/Stewie/sad_1.wav"
-        prompt_text: "唉，也许我们注定无法改变什么。"
-
-  Brian:
-    gpt_weights: GPT_SoVITS/pretrained_models/brian_gpt.ckpt
-    sovits_weights: GPT_SoVITS/pretrained_models/brian_sovits.pth
+      default:
+        ref_audio_path: "reference/brain_stew.wav"
+        prompt_text: "I must admit, there have been some moments that were, dare I say, fun. When this is all over, you may get a call asking you to evaluate my performance. Can I count on you to give me a ten?"
+  Trump:
+    gpt_weights: GPT_weights_v2/Trump_GPT.ckpt
+    sovits_weights: SoVITS_weights_v2/Trump_SoVITS.pth
     emotions:
-      愤怒:
-        ref_audio_path: "assets/Brian/angry.wav"
-        prompt_text: "别再说了，我已经忍够了。"
-      开心:
-        ref_audio_path: "assets/Brian/happy.wav"
-        prompt_text: "哈哈，这太有趣了，真的。"
+      default:
+        ref_audio_path: "reference/aggressive_trump.wav"
+        prompt_text: "Because it's all the same thing. And it all comes out of the White House. Crooked Joe Biden, the worst president in the history of our country. He's the worst president."
+  Bill:
+    gpt_weights: GPT_weights_v2/BillGates-e20.ckpt
+    sovits_weights: SoVITS_weights_v2/BillGates_e20_s740.pth
+    emotions:
+      default:
+        ref_audio_path: "reference/gates.wav"
+        prompt_text: "and serve on our covid response team. Chris was recently on the committee that produced the framework for equitable allocation"

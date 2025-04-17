@@ -35,7 +35,7 @@ def generate_video_for_block(block, project_path, index, theme="", reGen=True, p
         decision = ask_llm_decision(script, theme)
         block["video_generation_method"] = decision
 
-    if decision == "search":
+    if decision == "search" or decision: # 短路 省token测试
         query = get_video_query_from_llm(script, theme)
         print(f"[Pexels] Searching video with query: {query}")
         video_url = get_pexels_video_url(query)
@@ -60,7 +60,6 @@ def generate_video_for_block(block, project_path, index, theme="", reGen=True, p
             block["video"] = "download_failed"
 
     elif decision == "generate":
-        pass
         print(f"[SiliconFlow] Submitting generation task for: {script}")
         query = get_text_to_image_prompt_from_llm(script)
         print(f"[SiliconFlow] Prompt: {query}")

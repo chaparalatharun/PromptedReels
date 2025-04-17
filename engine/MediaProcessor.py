@@ -31,17 +31,15 @@ class MediaProcessor:
         current_time = 0
 
         for idx, block in enumerate(self.data["script"]):
-            if self.reGen_video:
-                generate_video_for_block(block, self.project_path, idx, self.theme,self.reGen_video, None)
-            if self.reGen_audio:
-                block_srt, current_time = generate_audio_for_block(
+            generate_video_for_block(block, self.project_path, idx, self.theme,self.reGen_video, None)
+            block_srt, current_time = generate_audio_for_block(
                     block, self.project_path, idx,
                     output_name=self.output_name,
                     reGen=self.reGen_audio,
                     current_time=current_time
                 )
-                srt_segments.extend(block_srt)
-            self.save()
+            srt_segments.extend(block_srt)
+            self._save()
 
         # 所有 audio 生成完成后保存 srt
         srt_path = os.path.join(self.project_path, "subtitles.srt")
@@ -74,7 +72,7 @@ class MediaProcessor:
                 current_time=current_time  # We reset to 0 for single block timing
             )
 
-        self.save()
+        self._save()
 
         if self.reGen_audio and block_srt:
             srt_path = os.path.join(self.project_path, "subtitles.srt")

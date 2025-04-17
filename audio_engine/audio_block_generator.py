@@ -18,12 +18,12 @@ with open("./config/audio_config.yaml", "r", encoding="utf-8") as f:
 
 # Default TTS params (mutable copy will be used)
 DEFAULT_TTS_PARAMS = {
-    "text_lang": "zh",
+    "text_lang": "en",
     "cut_punc": "。，？",
     "speed": "1.2",
     "ref_audio_path": "output/reference.wav",
     "prompt_text": "就是跟他这个成长的外部环境有关系，和本身的素质也有关系，他是一个",
-    "prompt_lang": "zh",
+    "prompt_lang": "en",
     "text_split_method": "cut5",
     "batch_size": 1,
     "media_type": "wav",
@@ -32,7 +32,7 @@ DEFAULT_TTS_PARAMS = {
 
 
 def split_text_into_clips(text):
-    clips = re.split(r'[，。？]', text)
+    clips = re.split(r'[，。？,.]', text)
     return [clip.strip() for clip in clips if clip.strip()]
 
 
@@ -41,14 +41,16 @@ def format_time(seconds):
     hours, mins = divmod(mins, 60)
     return f"{int(hours):02}:{int(mins):02}:{int(secs):02},{int((seconds % 1) * 1000):03}"
 
-
-def get_audio_duration(audio_path):
+from pydub.utils import mediainfo
+def get_audio_duration(audio_path: str) -> float:
     try:
-        audio = AudioSegment.from_wav(audio_path)
-        return len(audio) / 1000
+        info = mediainfo(audio_path)
+        return float(info['duration'])
     except Exception as e:
-        print(f"❌ Error reading audio file: {e}")
-        return 0
+        print(f"❌ Failed to extract duration: {e}")
+        return 0.0
+
+
 
 
 def switch_character_model(character: str, emotion: str):
@@ -69,8 +71,8 @@ def switch_character_model(character: str, emotion: str):
     # Update global TTS params
     emotion_cfg = char_cfg.get("emotions", {}).get(emotion)
     if not emotion_cfg:
-        print(f"⚠️ No emotion config for {character} - {emotion}")
-        return
+        print(f"⚠️ No emotion config for {character} - {emotion}, using default")
+        emotion_cfg = char_cfg.get("emotions", {}).get("default")
 
     DEFAULT_TTS_PARAMS["ref_audio_path"] = emotion_cfg.get("ref_audio_path", DEFAULT_TTS_PARAMS["ref_audio_path"])
     DEFAULT_TTS_PARAMS["prompt_text"] = emotion_cfg.get("prompt_text", DEFAULT_TTS_PARAMS["prompt_text"])
@@ -88,7 +90,7 @@ def generate_audio_for_block(block, project_path, index, output_name=None, reGen
     emotion = block.get("emotion", "愤怒")
 
     # Switch speaker before processing
-    switch_character_model(character, emotion)
+    switched = False
 
     script = block["text"]
     clips = split_text_into_clips(script)
@@ -102,6 +104,9 @@ def generate_audio_for_block(block, project_path, index, output_name=None, reGen
         if os.path.exists(audio_file_path) and not reGen:
             print(f"✅ Audio exists, skipping: {audio_file_path}")
         else:
+            if not switched:
+                switch_character_model(character, emotion)
+                switched = True
             print(f"[TTS] Generating audio for: {clip}")
             params = DEFAULT_TTS_PARAMS.copy()
             params["text"] = clip
