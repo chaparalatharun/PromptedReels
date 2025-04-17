@@ -12,19 +12,6 @@ def get_project_choices():
         if not p.startswith(".") and os.path.isdir(os.path.join(projects_dir, p))
     ]
 
-# def generate_media_deprecated(project_name, reGen_AU_checkbox, reGen_VI_checkbox, video_title):
-#     if not project_name:
-#         return "No project selected"
-#     project_path = os.path.join(projects_dir, project_name)
-#     input_path = os.path.join(project_path, "input.json")
-#     data = load_json(input_path)
-#
-#     generate_video_clip(data, project_path, reGen=reGen_VI_checkbox, theme=video_title)
-#     generate_tts_audio(data, project_path, reGen=reGen_AU_checkbox)
-#
-#     save_json(data, os.path.join(project_path, "processed.json"))
-#     return f"Media generated for project: {project_name} (Regenerate audio={reGen_AU_checkbox}, video={reGen_VI_checkbox})"
-
 def generate_media(project_name, reGen_AU_checkbox, reGen_VI_checkbox, video_title):
     if not project_name:
         return "No project selected"
