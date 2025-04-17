@@ -15,6 +15,11 @@ VideoAutoMaker is an automated AI-powered video generation pipeline that takes a
 [![Watch the demo video](https://img.youtube.com/vi/RjH_D1CPzps/0.jpg)](https://www.youtube.com/watch?v=RjH_D1CPzps)
 
 
+📺 **Example video (English):**
+
+![Video_clip](example/picture/video_en.png) <!-- replace with actual image path -->
+
+
 ---
 
 ## 📄 Project Paper
