@@ -12,7 +12,7 @@ def get_project_choices():
         if not p.startswith(".") and os.path.isdir(os.path.join(projects_dir, p))
     ]
 
-def generate_media(project_name, reGen_AU_checkbox, reGen_VI_checkbox, video_title):
+def generate_media(project_name, reGen_AU_checkbox, reGen_IM_checkbox,reGen_VI_checkbox, video_title):
     if not project_name:
         return "No project selected"
 
@@ -21,6 +21,7 @@ def generate_media(project_name, reGen_AU_checkbox, reGen_VI_checkbox, video_tit
         projects_dir=projects_dir,
         reGen_audio=reGen_AU_checkbox,
         reGen_video=reGen_VI_checkbox,
+        reGen_image=reGen_IM_checkbox,
         theme=video_title
     )
 
@@ -54,7 +55,9 @@ def build_stage2_ui():
         project_selector2 = gr.Dropdown(label="Select Project", choices=get_project_choices(), interactive=True)
         refresh_btn = gr.Button("🔄 Refresh Project List")
         reGen_AU_checkbox = gr.Checkbox(label="Regenerate Media (audio)", value=True)
+        reGen_IM_checkbox = gr.Checkbox(label="Regenerate Media (Image)", value=True)
         reGen_VI_checkbox = gr.Checkbox(label="Regenerate Media (video)", value=True)
+
         video_title = gr.Textbox(label="Video Title", interactive=True)
         generate_btn = gr.Button("Generate Audio & Video")
         gen_status = gr.Textbox(label="Generation Status")
@@ -73,7 +76,7 @@ def build_stage2_ui():
 
         generate_btn.click(
             generate_media,
-            inputs=[project_selector2, reGen_AU_checkbox, reGen_VI_checkbox, video_title],
+            inputs=[project_selector2, reGen_AU_checkbox,reGen_IM_checkbox, reGen_VI_checkbox, video_title],
             outputs=[gen_status]
         )
     return demo

@@ -18,34 +18,6 @@ HEADERS = {
 # 用于缓存生成请求的 request_id
 GENERATED_REQUEST_IDS = []
 
-def generate_siliconflow_video(prompt, image_url=None, model="Wan-AI/Wan2.1-T2V-14B-Turbo", size="1280x720", seed=None, negative_prompt=""):
-    if not SILICONFLOW_API_TOKEN:
-        print("❌ Missing SiliconFlow API token.")
-        return None
-
-    payload = {
-        "model": model,
-        "prompt": prompt,
-        "image_size": size,
-        "negative_prompt": negative_prompt
-    }
-
-    if image_url:
-        payload["image"] = image_url
-    if seed is not None:
-        payload["seed"] = seed
-
-    try:
-        response = requests.post(SILICONFLOW_SUBMIT_URL, json=payload, headers=HEADERS)
-        response.raise_for_status()
-        result = response.json()
-        request_id = result.get("requestId", None)
-        if request_id:
-            GENERATED_REQUEST_IDS.append(request_id)
-        return request_id
-    except Exception as e:
-        print(f"❌ SiliconFlow API Error: {e}")
-        return None
 
 def check_siliconflow_video_status(request_id):
     try:
@@ -68,32 +40,30 @@ def check_siliconflow_video_status(request_id):
 def generate_video_from_image_file(prompt, image_path, model="Wan-AI/Wan2.1-I2V-14B-720P", size="1280x720", seed=None, negative_prompt=""):
     print(f"📤 Encoding image from: {image_path}")
     image_base64 = encode_image_to_base64(image_path)
+    print(f"Encoded imaged base64={image_base64[:10]}, len={(len(image_base64))}")
     if not image_base64:
         print("❌ Could not convert image to base64.")
         return None
 
-    print(f"📤 Submitting image+prompt video generation task...")
-    request_id = generate_siliconflow_video(
-        prompt=prompt,
-        image_url=image_base64,
-        model=model,
-        size=size,
-        seed=seed,
-        negative_prompt=negative_prompt
-    )
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "image_size": size,
+        "negative_prompt": negative_prompt,
+        "image" : image_base64,
+        "seed":seed
+    }
 
-    if not request_id:
+
+    try:
+        response = requests.post(SILICONFLOW_SUBMIT_URL, json=payload, headers=HEADERS)
+        response.raise_for_status()
+        result = response.json()
+        request_id = result.get("requestId", None)
+        if request_id:
+            print(f"Request ID get! id={request_id}")
+            GENERATED_REQUEST_IDS.append(request_id)
+        return request_id
+    except Exception as e:
+        print(f"❌ SiliconFlow API Error: {e}")
         return None
-
-    print(f"⏳ Request submitted. ID: {request_id}. Polling for result...")
-
-    for _ in range(24):  # max ~2 minutes
-        time.sleep(5)
-        video_url = check_siliconflow_video_status(request_id)
-        if video_url:
-            print(f"✅ Video ready: {video_url}")
-            return video_url
-        print("⌛ Still processing...")
-
-    print("❌ Timed out waiting for video generation.")
-    return None

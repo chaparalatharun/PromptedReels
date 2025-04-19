@@ -4,19 +4,17 @@ from engine.text_parser import split_script_to_chunks
 
 
 def parse_script_line(line):
+    ret = {"character": "",
+            "picture": "random",
+           }
+    if ";;;" in line:
+        line, scene = line.split(";;;",1)
+        ret["scene"] = scene
     if ":" in line:
-        name, content = line.split(":", 1)
-        return {
-            "character": name.strip(),
-            "picture": "random",
-            "text": content.strip()
-        }
-    else:
-        return {
-            "character": "",
-            "picture": "random",
-            "text": line.strip()
-        }
+        name, line = line.split(":", 1)
+        ret["character"] = name.strip()
+    ret["text"] = line
+    return ret
 
 def create_project(name, theme, script):
     path = create_fn(name)

@@ -8,7 +8,6 @@ from .llm_prompt import (
 from .pexels_api import get_pexels_video_url
 
 from .siliconflow_api import (
-    generate_siliconflow_video,
     check_siliconflow_video_status, generate_video_from_image_file
 )
 
@@ -20,7 +19,6 @@ __all__ = [
     "ask_llm_decision",
     "get_text_to_image_prompt_from_llm",
     "get_pexels_video_url",
-    "generate_siliconflow_video",
     "check_siliconflow_video_status",
     "generate_dalle3_image_url",
     "generate_video_from_image_file"
