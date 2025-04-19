@@ -2,6 +2,7 @@ import os
 import requests
 import time
 from dotenv import load_dotenv
+from video_engine.encode_image import encode_image_to_base64
 
 load_dotenv()
 
@@ -64,3 +65,35 @@ def check_siliconflow_video_status(request_id):
         print(f"❌ Check Status Error for {request_id}: {e}")
         return None
 
+def generate_video_from_image_file(prompt, image_path, model="Wan-AI/Wan2.1-I2V-14B-720P", size="1280x720", seed=None, negative_prompt=""):
+    print(f"📤 Encoding image from: {image_path}")
+    image_base64 = encode_image_to_base64(image_path)
+    if not image_base64:
+        print("❌ Could not convert image to base64.")
+        return None
+
+    print(f"📤 Submitting image+prompt video generation task...")
+    request_id = generate_siliconflow_video(
+        prompt=prompt,
+        image_url=image_base64,
+        model=model,
+        size=size,
+        seed=seed,
+        negative_prompt=negative_prompt
+    )
+
+    if not request_id:
+        return None
+
+    print(f"⏳ Request submitted. ID: {request_id}. Polling for result...")
+
+    for _ in range(24):  # max ~2 minutes
+        time.sleep(5)
+        video_url = check_siliconflow_video_status(request_id)
+        if video_url:
+            print(f"✅ Video ready: {video_url}")
+            return video_url
+        print("⌛ Still processing...")
+
+    print("❌ Timed out waiting for video generation.")
+    return None

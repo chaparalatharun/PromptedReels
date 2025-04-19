@@ -6,11 +6,12 @@ from video_engine import generate_video_for_block
 
 
 class MediaProcessor:
-    def __init__(self, project_name, projects_dir, reGen_audio=True, reGen_video=True, theme=""):
+    def __init__(self, project_name, projects_dir, reGen_audio=True, reGen_image = True,reGen_video=True, theme=""):
         self.project_path = os.path.join(projects_dir, project_name)
         self.output_name = os.path.basename(self.project_path)
         self.reGen_audio = reGen_audio
         self.reGen_video = reGen_video
+        self.reGen_image = reGen_image
         self.theme = theme
 
         # 优先加载 processed.json，如果不存在则加载 input.json
@@ -31,7 +32,7 @@ class MediaProcessor:
         current_time = 0
 
         for idx, block in enumerate(self.data["script"]):
-            generate_video_for_block(block, self.project_path, idx, self.theme,self.reGen_video, None)
+            generate_video_for_block(block, self.project_path, idx, self.theme,self.reGen_image, self.reGen_video, None)
             block_srt, current_time = generate_audio_for_block(
                     block, self.project_path, idx,
                     output_name=self.output_name,
@@ -60,8 +61,7 @@ class MediaProcessor:
 
         print(f"🎬 Processing block {idx}...")
 
-        if self.reGen_video:
-            generate_video_for_block(block, self.project_path, idx, self.theme, self.reGen_video, None)
+        generate_video_for_block(block, self.project_path, idx, self.theme, self.reGen_image, self.reGen_video, None)
 
         block_srt = []
         if self.reGen_audio:

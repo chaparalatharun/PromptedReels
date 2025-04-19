@@ -7,3 +7,5 @@ pydantic~=2.10.6
 PyYAML~=6.0.2
 pydub~=0.25.1
 uvicorn~=0.34.0
+langchain-community~=0.3.21
+openai==1.75.0

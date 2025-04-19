@@ -12,8 +12,12 @@ from engine.JsonProcessor import JsonProcessor
 from engine.MediaProcessor import MediaProcessor
 from engine.composer import compose_final_video
 from engine.project_manager import create_project, load_json
+from fastapi.staticfiles import StaticFiles
+
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="projects"), name="static")
+
 
 @app.get("/")
 def root():

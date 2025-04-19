@@ -11,6 +11,9 @@ LLM_API_HEADERS = {
     "Content-Type": "application/json"
 }
 
+
+
+
 def ask_llm_decision(script_text, theme):
     prompt = (
         "Given the following script, decide whether we should:\n"
@@ -85,3 +88,7 @@ def get_text_to_image_prompt_from_llm(script_text):
     except Exception as e:
         print(f"❌ LLM Text-to-Image Prompt Error: {e}")
         return "A realistic scene that matches the script content"
+
+
+def get_image_to_video_prompt_from_llm(script_text):
+    pass

@@ -36,6 +36,7 @@ def create_fn(name):
     os.makedirs(base, exist_ok=True)
     os.makedirs(os.path.join(base, "audio"), exist_ok=True)
     os.makedirs(os.path.join(base, "video"), exist_ok=True)
+    os.makedirs(os.path.join(base, "image"), exist_ok=True)
     os.makedirs(os.path.join(base, "final"), exist_ok=True)
     return base
 
