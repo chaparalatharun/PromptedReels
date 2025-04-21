@@ -54,6 +54,7 @@ def get_audio_duration(audio_path: str) -> float:
 
 
 def switch_character_model(character: str, emotion: str):
+    character = "laogao"
     char_cfg = AUDIO_CONFIG.get("characters", {}).get(character)
     if not char_cfg:
         print(f"⚠️ No config found for character: {character}")
@@ -76,6 +77,7 @@ def switch_character_model(character: str, emotion: str):
 
     DEFAULT_TTS_PARAMS["ref_audio_path"] = emotion_cfg.get("ref_audio_path", DEFAULT_TTS_PARAMS["ref_audio_path"])
     DEFAULT_TTS_PARAMS["prompt_text"] = emotion_cfg.get("prompt_text", DEFAULT_TTS_PARAMS["prompt_text"])
+    return char_cfg.get("language", {})
 
 
 def generate_audio_for_block(block, project_path, index, output_name=None, reGen=True, current_time=0):
@@ -91,7 +93,7 @@ def generate_audio_for_block(block, project_path, index, output_name=None, reGen
 
     # Switch speaker before processing
     switched = False
-
+    lang = None
     script = block["text"]
     clips = split_text_into_clips(script)
     audio_filenames = []
@@ -104,12 +106,17 @@ def generate_audio_for_block(block, project_path, index, output_name=None, reGen
         if os.path.exists(audio_file_path) and not reGen:
             print(f"✅ Audio exists, skipping: {audio_file_path}")
         else:
+
             if not switched:
-                switch_character_model(character, emotion)
+                lang = switch_character_model(character, emotion)
                 switched = True
             print(f"[TTS] Generating audio for: {clip}")
             params = DEFAULT_TTS_PARAMS.copy()
             params["text"] = clip
+            if lang:
+                params["text_lang"] = lang
+                params["prompt_lang"] = lang
+            print(params)
             try:
                 response = requests.get(TTS_URL, params=params)
                 if response.status_code == 200:

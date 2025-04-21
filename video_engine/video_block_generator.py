@@ -2,46 +2,70 @@ import asyncio
 import os
 import threading
 from concurrent.futures import ThreadPoolExecutor
-
 import requests
-
+from dotenv import load_dotenv
+from runwayml import RunwayML
 from video_engine import generate_dalle3_image_url
-from video_engine.siliconflow_api import (
-    generate_video_from_image_file, check_siliconflow_video_status
-)
+from video_engine.runway_api import generate_runway_video_from_image
+from video_engine.siliconflow_api import generate_video_from_image_file, check_siliconflow_video_status
 
+# Setup
+load_dotenv()
+RUNWAY_CLIENT = RunwayML(api_key=os.getenv("RUNWAY_KEY"))
 executor = ThreadPoolExecutor()
 
-# Create a global event loop running in background
 loop = asyncio.new_event_loop()
-
-def start_loop(loop):
-    asyncio.set_event_loop(loop)
-    loop.run_forever()
-
+def start_loop(loop): asyncio.set_event_loop(loop); loop.run_forever()
 threading.Thread(target=start_loop, args=(loop,), daemon=True).start()
 
-async def poll_video_task(request_id, video_path, block, video_filename):
-    print(f"🧵 Start background polling for {request_id}")
+async def poll_runway_video_task(task_id, video_path, block, video_filename):
+    print(f"🧵 Polling Runway task {task_id}")
+    for i in range(1000):
+        await asyncio.sleep(10)
+        try:
+            result = RUNWAY_CLIENT.tasks.retrieve(task_id)
+            status = result.status
+            print(f"⌛ [{i}] Runway status: {status}")
+            if status == "SUCCEEDED":
+                video_url = result.output[0]
+                video_data = requests.get(video_url)
+                video_data.raise_for_status()
+                with open(video_path, "wb") as f:
+                    f.write(video_data.content)
+                block["video"] = f"video/{video_filename}"
+                print(f"🎉 Runway video saved: {video_path}")
+                return
+            elif status == "failed":
+                print(f"❌ Runway task failed: {task_id}")
+                return
+        except Exception as e:
+            print(f"❌ Runway polling error: {e}")
+    print(f"❌ Runway timeout for: {task_id}")
+
+
+# SiliconFlow polling
+async def poll_siliconflow_video_task(request_id, video_path, block, video_filename):
+    print(f"🧵 Polling SiliconFlow task {request_id}")
     for i in range(100):
         await asyncio.sleep(10)
         video_url = check_siliconflow_video_status(request_id)
         if video_url:
-            print(f"✅ Video ready at {video_url}")
             try:
                 video_data = requests.get(video_url)
                 video_data.raise_for_status()
                 with open(video_path, "wb") as f:
                     f.write(video_data.content)
                 block["video"] = f"video/{video_filename}"
-                print(f"🎉 Video saved to: {video_path}")
+                print(f"🎉 SiliconFlow video saved: {video_path}")
+                return
             except Exception as e:
-                print(f"❌ Failed to download video: {e}")
-            return
+                print(f"❌ Download error: {e}")
         print(f"⌛ Still waiting... epoch {i}... for id:{request_id}")
-    print(f"❌ Timed out for request {request_id}")
+    print(f"❌ SiliconFlow timeout for: {request_id}")
 
-def generate_video_for_block(block, project_path, index, theme="", regen_image=True, regen_video=True, pre_decision=None):
+
+# Core function
+def generate_video_for_block(block, project_path, index, theme="", regen_image=True, regen_video=True, pre_decision=None, use_runway=False,direct_Video=True):
     script = block["text"]
     output_name = os.path.basename(project_path)
 
@@ -52,7 +76,6 @@ def generate_video_for_block(block, project_path, index, theme="", regen_image=T
 
     image_filename = f"{output_name}_{index + 1}.png"
     video_filename = f"{output_name}_{index + 1}.mp4"
-
     image_path = os.path.join(output_image_dir, image_filename)
     video_path = os.path.join(output_video_dir, video_filename)
 
@@ -61,40 +84,61 @@ def generate_video_for_block(block, project_path, index, theme="", regen_image=T
         block["video"] = f"video/{video_filename}"
         return
 
-    print(f"🧠 Generating prompts for block {index + 1}")
     image_prompt = block["scene"]
-    video_prompt = block["scene"]
+    video_prompt = block["move_prompt"]
 
+    # Generate or reuse image
     if not os.path.exists(image_path) or regen_image:
         print(f"🎨 Generating DALL·E 3 image for: {image_prompt}")
         image_url = generate_dalle3_image_url(image_prompt)
-
         if not image_url:
-            print(f"❌ Failed to get image URL. Skipping block {index + 1}")
+            print(f"❌ Failed to get image URL")
             return
-
         try:
-            response = requests.get(image_url)
-            response.raise_for_status()
+            image_data = requests.get(image_url)
+            image_data.raise_for_status()
             with open(image_path, "wb") as f:
-                f.write(response.content)
-            print(f"📥 Image saved to: {image_path}")
+                f.write(image_data.content)
+            print(f"📥 Image saved: {image_path}")
         except Exception as e:
-            print(f"❌ Failed to download image: {e}")
+            print(f"❌ Failed to save image: {e}")
             return
     else:
         print(f"🖼️ Using cached image: {image_path}")
+        image_url = None  # fallback, won't be used for SiliconFlow
 
-    print(f"🎬 Submitting video generation task for: {video_prompt}")
-    request_id = generate_video_from_image_file(video_prompt, image_path)
-
-    if request_id:
-        asyncio.run_coroutine_threadsafe(
-            poll_video_task(request_id, video_path, block, video_filename),
-            loop
-        )
+    # Submit video generation
+    if not direct_Video:
+        print("skipping video")
+        return
+    if use_runway:
+        print(f"🚀 Submitting Runway video generation for: {video_prompt}")
+        try:
+            task_id = generate_runway_video_from_image(video_prompt,image_path)
+            # task = RUNWAY_CLIENT.image_to_video.create(
+            #     model="gen4_turbo",
+            #     prompt_image=image_path,
+            #     prompt_text=video_prompt,
+            # )
+            asyncio.run_coroutine_threadsafe(
+                poll_runway_video_task(task_id, video_path, block, video_filename),
+                loop
+            )
+        except Exception as e:
+            print(f"❌ Runway submission failed: {e}")
     else:
-        print(f"❌ Video generation submission failed for block {index + 1}")
+        print(f"🚀 Submitting SiliconFlow video generation for: {video_prompt}")
+        request_id = generate_video_from_image_file(
+            prompt=video_prompt,
+            image_path=image_path,
+        )
+        if request_id:
+            asyncio.run_coroutine_threadsafe(
+                poll_siliconflow_video_task(request_id, video_path, block, video_filename),
+                loop
+            )
+        else:
+            print(f"❌ SiliconFlow submission failed")
 
 # def generate_video_for_block_deprecated(block, project_path, index, theme="", reGen=True, pre_decision = None):
 #     script = block["text"]

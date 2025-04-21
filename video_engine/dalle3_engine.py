@@ -23,7 +23,7 @@ def generate_dalle3_image_url(prompt: str) -> str:
     try:
         response = client.images.generate(
             model="dall-e-3",
-            prompt=f"ghibli style of {prompt}",
+            prompt=f"Generate realistic style image: {prompt}",
             size="1792x1024",  # 16:9 Aspect ratio
             quality="hd",      # Maximum quality
             n=1

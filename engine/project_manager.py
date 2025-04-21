@@ -8,8 +8,9 @@ def parse_script_line(line):
             "picture": "random",
            }
     if ";;;" in line:
-        line, scene = line.split(";;;",1)
+        line, scene, move_prompt = line.split(";;;")
         ret["scene"] = scene
+        ret["move_prompt"] = move_prompt
     if ":" in line:
         name, line = line.split(":", 1)
         ret["character"] = name.strip()

@@ -10,3 +10,4 @@ uvicorn~=0.34.0
 langchain-community~=0.3.21
 openai==1.75.0
 runwayml~=3.0.2
+httpx~=0.28.1

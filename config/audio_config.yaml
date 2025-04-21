@@ -2,6 +2,7 @@ characters:
   Stewie:
     gpt_weights: GPT_weights_v2/Stewie-e20.ckpt
     sovits_weights: SoVITS_weights_v2/Stewie_e20_s1900.pth
+    language: "en"
     emotions:
       default:
         ref_audio_path: "reference/brain_stew.wav"
@@ -9,6 +10,7 @@ characters:
   Trump:
     gpt_weights: GPT_weights_v2/Trump_GPT.ckpt
     sovits_weights: SoVITS_weights_v2/Trump_SoVITS.pth
+    language: "en"
     emotions:
       default:
         ref_audio_path: "reference/aggressive_trump.wav"
@@ -16,7 +18,16 @@ characters:
   Bill:
     gpt_weights: GPT_weights_v2/BillGates-e20.ckpt
     sovits_weights: SoVITS_weights_v2/BillGates_e20_s740.pth
+    language: "en"
     emotions:
       default:
         ref_audio_path: "reference/gates.wav"
         prompt_text: "and serve on our covid response team. Chris was recently on the committee that produced the framework for equitable allocation"
+  laogao:
+    gpt_weights: GPT_weights_v2/laogao.ckpt
+    sovits_weights: SoVITS_weights_v2/laogao.pth
+    language: "zh"
+    emotions:
+      default:
+        ref_audio_path: "reference/laogao.wav"
+        prompt_text: "就是跟他这个成长的外部环境有关系，和本身的素质也有关系，他是一个"

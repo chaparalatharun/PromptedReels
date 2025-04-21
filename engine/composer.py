@@ -48,8 +48,6 @@ def resize_and_crop(clip, target_size=(1280, 720)):
         clip = clip.fx(vfx.resize, width=target_size[0])
 
     return clip.set_position(("center", "center"))
-
-
 def compose_final_video(processed_json, project_folder, output_path, insert_subtitle=True):
     temp_no_sub_path = output_path.replace(".mp4", "_nosub.mp4")
     subtitle_path = os.path.join(project_folder, "subtitles.srt")
@@ -65,57 +63,23 @@ def compose_final_video(processed_json, project_folder, output_path, insert_subt
             continue
 
         try:
-
             video_clip = VideoFileClip(video_path)
-            # 替换 video_clip 赋值后的部分
             video_clip = resize_and_crop(video_clip, target_size=(1280, 720))
 
-            # 添加角色图像
-            character = block.get("character", "")
-            picture = block.get("picture", "random")
-            character_folder = os.path.join("assets", character)
-
-            # 解析角色图像路径
-            if picture == "random":
-                images = [f for f in os.listdir(character_folder) if f.endswith((".jpg", ".png"))]
-                if not images:
-                    print(f"⚠️ No images found for character {character}.")
-                    continue
-                picture_file = random.choice(images)
-            else:
-                picture_file = picture if picture.endswith((".jpg", ".png")) else picture + ".jpg"
-
-            picture_path = os.path.join(character_folder, picture_file)
-
-            # 创建图像剪辑
-            if not os.path.exists(picture_path):
-                print(f"⚠️ Picture file not found: {picture_path}")
-                continue
-
-            img_clip = (
-                ImageClip(picture_path)
-                .set_duration(video_clip.duration)
-                .resize(width=video_clip.w * 0.2)  # 缩放到占视频宽度 20%
-                .set_position(("left", "bottom"))
-            )
-
-            # 合并视频和图像
-            video_with_img = CompositeVideoClip([video_clip, img_clip])
-
-            # 合并音频
+            # Load and concatenate audio
             audio_clips = [AudioFileClip(path) for path in audio_paths]
             audio_clip = concatenate_audioclips(audio_clips)
 
-            if video_with_img.duration < audio_clip.duration:
-                repeat_count = int(audio_clip.duration // video_with_img.duration) + 1
-                video_with_img = concatenate_videoclips([video_with_img] * repeat_count)
+            # Repeat video to match audio duration
+            if video_clip.duration < audio_clip.duration:
+                repeat_count = int(audio_clip.duration // video_clip.duration) + 1
+                video_clip = concatenate_videoclips([video_clip] * repeat_count)
 
-            video_with_img = video_with_img.subclip(0, audio_clip.duration)
-            final_clip = video_with_img.set_audio(audio_clip)
+            video_clip = video_clip.subclip(0, audio_clip.duration)
+            final_clip = video_clip.set_audio(audio_clip)
 
             video_clips.append(final_clip)
-            print(f"✅ Processed clip {i + 1} with character {character}")
-
+            print(f"✅ Processed clip {i + 1}")
 
         except Exception as e:
             print(f"❌ Error processing clip {i + 1}: {e}")
@@ -131,7 +95,7 @@ def compose_final_video(processed_json, project_folder, output_path, insert_subt
         # Step 1: Export video without subtitles
         final_video.write_videofile(
             temp_no_sub_path,
-            codec="libx264",  # Or "h264_videotoolbox" for macOS hardware
+            codec="libx264",
             audio_codec="aac",
             threads=4,
             ffmpeg_params=["-preset", "fast"],
@@ -140,7 +104,7 @@ def compose_final_video(processed_json, project_folder, output_path, insert_subt
         # Step 2: Add subtitles via FFmpeg
         if insert_subtitle and os.path.exists(subtitle_path):
             add_subtitles_with_ffmpeg(temp_no_sub_path, subtitle_path, output_path)
-            os.remove(temp_no_sub_path)  # Clean up temp
+            os.remove(temp_no_sub_path)
         else:
             os.rename(temp_no_sub_path, output_path)
             print("⚠️ No subtitles added, final video saved without subs.")
