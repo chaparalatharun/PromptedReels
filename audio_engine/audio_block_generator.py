@@ -21,7 +21,7 @@ with open("./config/audio_config.yaml", "r", encoding="utf-8") as f:
 DEFAULT_TTS_PARAMS = {
     "text_lang": "en",
     "cut_punc": "。，？",
-    "speed": "1.2",
+    "speed": "1.4",
     "ref_audio_path": "output/reference.wav",
     "prompt_text": "就是跟他这个成长的外部环境有关系，和本身的素质也有关系，他是一个",
     "prompt_lang": "en",
@@ -54,7 +54,7 @@ def get_audio_duration(audio_path: str) -> float:
 
 
 def switch_character_model(character: str, emotion: str):
-    character = "laogao"
+    character = "dingzhen"
     char_cfg = AUDIO_CONFIG.get("characters", {}).get(character)
     if not char_cfg:
         print(f"⚠️ No config found for character: {character}")

@@ -84,61 +84,67 @@ def generate_video_for_block(block, project_path, index, theme="", regen_image=T
         block["video"] = f"video/{video_filename}"
         return
 
-    image_prompt = block["scene"]
-    video_prompt = block["move_prompt"]
+    mode = block["mode"]
+    if mode == "generate_image":
 
-    # Generate or reuse image
-    if not os.path.exists(image_path) or regen_image:
-        print(f"🎨 Generating DALL·E 3 image for: {image_prompt}")
-        image_url = generate_dalle3_image_url(image_prompt)
-        if not image_url:
-            print(f"❌ Failed to get image URL")
-            return
-        try:
-            image_data = requests.get(image_url)
-            image_data.raise_for_status()
-            with open(image_path, "wb") as f:
-                f.write(image_data.content)
-            print(f"📥 Image saved: {image_path}")
-        except Exception as e:
-            print(f"❌ Failed to save image: {e}")
-            return
-    else:
-        print(f"🖼️ Using cached image: {image_path}")
-        image_url = None  # fallback, won't be used for SiliconFlow
+        image_prompt = block["generate_image"]
+        # video_prompt = block["move_prompt"]
 
-    # Submit video generation
-    if not direct_Video:
-        print("skipping video")
-        return
-    if use_runway:
-        print(f"🚀 Submitting Runway video generation for: {video_prompt}")
-        try:
-            task_id = generate_runway_video_from_image(video_prompt,image_path)
-            # task = RUNWAY_CLIENT.image_to_video.create(
-            #     model="gen4_turbo",
-            #     prompt_image=image_path,
-            #     prompt_text=video_prompt,
-            # )
-            asyncio.run_coroutine_threadsafe(
-                poll_runway_video_task(task_id, video_path, block, video_filename),
-                loop
-            )
-        except Exception as e:
-            print(f"❌ Runway submission failed: {e}")
-    else:
-        print(f"🚀 Submitting SiliconFlow video generation for: {video_prompt}")
-        request_id = generate_video_from_image_file(
-            prompt=video_prompt,
-            image_path=image_path,
-        )
-        if request_id:
-            asyncio.run_coroutine_threadsafe(
-                poll_siliconflow_video_task(request_id, video_path, block, video_filename),
-                loop
-            )
+        # Generate or reuse image
+        if not os.path.exists(image_path) or regen_image:
+            print(f"🎨 Generating DALL·E 3 image for: {image_prompt}")
+            image_url = generate_dalle3_image_url(image_prompt)
+            if not image_url:
+                print(f"❌ Failed to get image URL")
+                return
+            try:
+                image_data = requests.get(image_url)
+                image_data.raise_for_status()
+                with open(image_path, "wb") as f:
+                    f.write(image_data.content)
+                block["image"] = f"image/{image_filename}"
+                print(f"📥 Image saved: {image_path}")
+            except Exception as e:
+                print(f"❌ Failed to save image: {e}")
+                return
         else:
-            print(f"❌ SiliconFlow submission failed")
+            print(f"🖼️ Using cached image: {image_path}")
+        image_url = None  # fallback, won't be used for SiliconFlow
+    else:
+        print("not implemented yet")
+
+    # # Submit video generation
+    # if not direct_Video:
+    #     print("skipping video")
+    #     return
+    # if use_runway:
+    #     print(f"🚀 Submitting Runway video generation for: {video_prompt}")
+    #     try:
+    #         task_id = generate_runway_video_from_image(video_prompt,image_path)
+    #         # task = RUNWAY_CLIENT.image_to_video.create(
+    #         #     model="gen4_turbo",
+    #         #     prompt_image=image_path,
+    #         #     prompt_text=video_prompt,
+    #         # )
+    #         asyncio.run_coroutine_threadsafe(
+    #             poll_runway_video_task(task_id, video_path, block, video_filename),
+    #             loop
+    #         )
+    #     except Exception as e:
+    #         print(f"❌ Runway submission failed: {e}")
+    # else:
+    #     print(f"🚀 Submitting SiliconFlow video generation for: {video_prompt}")
+    #     request_id = generate_video_from_image_file(
+    #         prompt=video_prompt,
+    #         image_path=image_path,
+    #     )
+    #     if request_id:
+    #         asyncio.run_coroutine_threadsafe(
+    #             poll_siliconflow_video_task(request_id, video_path, block, video_filename),
+    #             loop
+    #         )
+    #     else:
+    #         print(f"❌ SiliconFlow submission failed")
 
 # def generate_video_for_block_deprecated(block, project_path, index, theme="", reGen=True, pre_decision = None):
 #     script = block["text"]

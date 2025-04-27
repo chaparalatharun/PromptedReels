@@ -60,21 +60,24 @@ def get_video_query_from_llm(script_text, theme):
         return "nature"
 
 
-def get_text_to_image_prompt_from_llm(script_text):
+def get_text_to_image_prompt_from_llm(scene_describe, chars):
     prompt = (
-        "Given a text script clip, it will be passed to Open-Sora, a text-to-video generator, "
-        "that can match the script for presentation.\n"
-        "Directly give me the script's English words, a detailed description of this video.\n"
-        "The keywords do not need to describe the entire script clip. The top priority is to generate the video "
-        "that can correspond and match the script. Give me the prompt in the following format:\n\n"
-        "Example:\n"
-        "The waves crash against the jagged rocks of the shoreline, sending spray high into the air. "
-        "The rocks are a dark gray color, with sharp edges and deep crevices. The water is a clear blue-green, "
-        "with white foam where the waves break against the rocks. The sky is a light gray, with a few white clouds "
-        "dotting the horizon.\n\n"
-        f"Script:\n{script_text}\n"
-        f"No output explanation, No output Script, just output the Description content:"
+        "Generate a highly detailed scene description that will be passed to DALLE3, a text-to-image generator. "
+        "The description must accurately match the scene provided below.\n\n"
+        f"Scene to describe:\n{scene_describe}\n\n"
     )
+    if chars: # if select the chars
+        prompt += (
+            "Additionally, ensure character consistency by replacing any person mentions with the following character descriptions:\n"
+            f"{', '.join(f'{name}: {content}' for name, content in chars.items())}\n\n"
+        )
+    prompt += (
+        "Important Instructions:\n"
+        "- Output only the final detailed description.\n"
+        "- Do not include explanations, headers, or scripts.\n"
+        "- Focus on vivid, cinematic, and realistic details."
+    )
+
     payload = {
         "model": "deepseek-ai/DeepSeek-V3",
         "messages": [{"role": "user", "content": prompt}],

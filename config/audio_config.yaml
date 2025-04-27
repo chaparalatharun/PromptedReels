@@ -31,3 +31,11 @@ characters:
       default:
         ref_audio_path: "reference/laogao.wav"
         prompt_text: "就是跟他这个成长的外部环境有关系，和本身的素质也有关系，他是一个"
+  dingzhen:
+    gpt_weights: GPT_weights_v3/dingzhen_v3-e15.ckpt
+    sovits_weights: SoVITS_weights_v3/dingzhen_v3-e2_s276_l32.pth
+    language: "zh"
+    emotions:
+      default:
+        ref_audio_path: "reference/dingzhen_audio/dingzhen_10.wav"
+        prompt_text: "有可能以后再也听不到这些声音了，他们是我们的朋友。"

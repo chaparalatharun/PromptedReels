@@ -48,41 +48,121 @@ def resize_and_crop(clip, target_size=(1280, 720)):
         clip = clip.fx(vfx.resize, width=target_size[0])
 
     return clip.set_position(("center", "center"))
-def compose_final_video(processed_json, project_folder, output_path, insert_subtitle=True):
+
+
+
+
+def compose_final_video(processed_json, project_folder, output_path, insert_subtitle=True, haveChar=True):
+    from moviepy.editor import VideoFileClip, AudioFileClip, ImageClip, CompositeVideoClip, concatenate_videoclips, concatenate_audioclips
+    import os
+    import random
+
     temp_no_sub_path = output_path.replace(".mp4", "_nosub.mp4")
     subtitle_path = os.path.join(project_folder, "subtitles.srt")
 
     video_clips = []
+    scene_mappings = {}
+
+    # 先建立 scene -> script_idx 的映射
+    for scene in processed_json.get("scene", []):
+        source_path = os.path.join(project_folder, scene.get("image", ""))
+        mode = scene.get("mode", "generate_image")
+        for match in scene.get("matches", []):
+            idx = match.get("script_idx")
+            effect = match.get("effect", "None")
+            scene_mappings[idx] = {
+                "source_path": source_path,
+                "mode": mode,
+                "effect": effect
+            }
 
     for i, block in enumerate(processed_json["script"]):
-        video_path = os.path.join(project_folder, block.get("video", ""))
         audio_paths = [os.path.join(project_folder, audio) for audio in block.get("audio", [])]
 
-        if not os.path.exists(video_path) or not all(os.path.exists(path) for path in audio_paths):
-            print(f"⚠️ Skipping clip {i + 1} due to missing video or audio.")
+        if not all(os.path.exists(path) for path in audio_paths):
+            print(f"⚠️ Skipping clip {i + 1} due to missing audio.")
             continue
 
         try:
-            video_clip = VideoFileClip(video_path)
-            video_clip = resize_and_crop(video_clip, target_size=(1280, 720))
+            # 默认 None，待会判断是 scene提供媒体 还是 自己的视频
+            base_clip = None
 
-            # Load and concatenate audio
+            if i in scene_mappings:
+                mapping = scene_mappings[i]
+                source_path = mapping["source_path"]
+                mode = mapping["mode"]
+
+                if mode == "generate_image":
+                    if os.path.exists(source_path):
+                        base_clip = ImageClip(source_path).set_duration(0.1)  # 先短一点，后面跟音频同步
+                        base_clip = resize_and_crop(base_clip, target_size=(1280, 720))
+                    else:
+                        print(f"⚠️ Scene image not found: {source_path}")
+                        continue
+
+                elif mode == "generate_video":
+                    if os.path.exists(source_path):
+                        base_clip = VideoFileClip(source_path)
+                        base_clip = resize_and_crop(base_clip, target_size=(1280, 720))
+                    else:
+                        print(f"⚠️ Scene video not found: {source_path}")
+                        continue
+
+            else:
+                # 没有 scene指定，则读自己的 video
+                video_path = os.path.join(project_folder, block.get("video", ""))
+                if os.path.exists(video_path):
+                    base_clip = VideoFileClip(video_path)
+                    base_clip = resize_and_crop(base_clip, target_size=(1280, 720))
+                else:
+                    print(f"⚠️ Video file not found for script_idx {i}: {video_path}")
+                    continue
+
+            if base_clip is None:
+                print(f"⚠️ No base clip found for script_idx {i}.")
+                continue
+
+            # 处理角色头像 (如果有的话)
+            if haveChar and i not in scene_mappings:  # 如果已经有 scene 全屏图了，就不再额外叠角色图
+                character = block.get("character", "")
+                picture = block.get("picture", "random")
+                character_folder = os.path.join("assets", character)
+
+                if picture == "random":
+                    images = [f for f in os.listdir(character_folder) if f.endswith((".jpg", ".png"))]
+                    if not images:
+                        print(f"⚠️ No images found for character {character}.")
+                        continue
+                    picture_file = random.choice(images)
+                else:
+                    picture_file = picture if picture.endswith((".jpg", ".png")) else picture + ".jpg"
+
+                picture_path = os.path.join(character_folder, picture_file)
+                if os.path.exists(picture_path):
+                    img_clip = ImageClip(picture_path).set_duration(base_clip.duration)
+                    img_clip = img_clip.resize(width=base_clip.w * 0.2).set_position(("left", "bottom"))
+                    base_clip = CompositeVideoClip([base_clip, img_clip])
+                else:
+                    print(f"⚠️ Character picture not found: {picture_path}")
+                    continue
+
+            # 合并音频
             audio_clips = [AudioFileClip(path) for path in audio_paths]
             audio_clip = concatenate_audioclips(audio_clips)
 
-            # Repeat video to match audio duration
-            if video_clip.duration < audio_clip.duration:
-                repeat_count = int(audio_clip.duration // video_clip.duration) + 1
-                video_clip = concatenate_videoclips([video_clip] * repeat_count)
+            # 让画面长度匹配音频
+            if base_clip.duration < audio_clip.duration:
+                repeat_count = int(audio_clip.duration // base_clip.duration) + 1
+                base_clip = concatenate_videoclips([base_clip] * repeat_count)
 
-            video_clip = video_clip.subclip(0, audio_clip.duration)
-            final_clip = video_clip.set_audio(audio_clip)
+            base_clip = base_clip.subclip(0, audio_clip.duration)
+            final_clip = base_clip.set_audio(audio_clip)
 
             video_clips.append(final_clip)
-            print(f"✅ Processed clip {i + 1}")
+            print(f"✅ Processed script_idx {i} {'with' if haveChar else 'without'} character/scene image.")
 
         except Exception as e:
-            print(f"❌ Error processing clip {i + 1}: {e}")
+            print(f"❌ Error processing script_idx {i}: {e}")
 
     if not video_clips:
         print("❌ No valid clips to compose.")
@@ -92,16 +172,15 @@ def compose_final_video(processed_json, project_folder, output_path, insert_subt
         final_video = concatenate_videoclips(video_clips, method="compose")
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-        # Step 1: Export video without subtitles
         final_video.write_videofile(
             temp_no_sub_path,
             codec="libx264",
             audio_codec="aac",
             threads=4,
             ffmpeg_params=["-preset", "fast"],
+            fps=24,
         )
 
-        # Step 2: Add subtitles via FFmpeg
         if insert_subtitle and os.path.exists(subtitle_path):
             add_subtitles_with_ffmpeg(temp_no_sub_path, subtitle_path, output_path)
             os.remove(temp_no_sub_path)
