@@ -15,15 +15,16 @@ class MediaProcessor:
         self.theme = theme
 
         # 优先加载 processed.json，如果不存在则加载 input.json
-        processed_path = os.path.join(self.project_path, "processed.json")
+        # processed_path = os.path.join(self.project_path, "processed.json")
         input_path = os.path.join(self.project_path, "input.json")
+        self.data = load_json(input_path)
 
-        if os.path.exists(processed_path):
-            print(f"📂 Loading existing progress from: {processed_path}")
-            self.data = load_json(processed_path)
-        else:
-            print(f"📂 No processed.json found, loading from: {input_path}")
-            self.data = load_json(input_path)
+        # if os.path.exists(processed_path):
+        #     print(f"📂 Loading existing progress from: {processed_path}")
+        #     self.data = load_json(processed_path)
+        # else:
+        #     print(f"📂 No processed.json found, loading from: {input_path}")
+        #     self.data = load_json(input_path)
 
 
     def process_all(self):
@@ -33,20 +34,20 @@ class MediaProcessor:
 
         for idx, block in enumerate(self.data["script"]):
             generate_video_for_block(block, self.project_path, idx, self.theme,self.reGen_image, self.reGen_video, None)
-            block_srt, current_time = generate_audio_for_block(
-                    block, self.project_path, idx,
-                    output_name=self.output_name,
-                    reGen=self.reGen_audio,
-                    current_time=current_time
-                )
-            srt_segments.extend(block_srt)
+            # block_srt, current_time = generate_audio_for_block(
+            #         block, self.project_path, idx,
+            #         output_name=self.output_name,
+            #         reGen=self.reGen_audio,
+            #         current_time=current_time
+            #     )
+            # srt_segments.extend(block_srt)
             self._save()
 
         # 所有 audio 生成完成后保存 srt
-        srt_path = os.path.join(self.project_path, "subtitles.srt")
-        with open(srt_path, "w", encoding="utf-8") as f:
-            f.writelines(srt_segments)
-        print(f"✅ Saved SRT: {srt_path}")
+        # srt_path = os.path.join(self.project_path, "subtitles.srt")
+        # with open(srt_path, "w", encoding="utf-8") as f:
+        #     f.writelines(srt_segments)
+        # print(f"✅ Saved SRT: {srt_path}")
         self._save()
         print("process done! and saved!")
 
@@ -103,5 +104,5 @@ class MediaProcessor:
 
 
     def _save(self):
-        save_path = os.path.join(self.project_path, "processed.json")
+        save_path = os.path.join(self.project_path, "input.json")
         save_json(self.data, save_path)

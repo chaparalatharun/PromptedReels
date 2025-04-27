@@ -20,12 +20,13 @@ def build_stage1_ui():
             project_name = gr.Textbox(label="Project Name")
             theme_input = gr.Textbox(label="Video Theme")
         script_input = gr.Textbox(label="Paste Script", lines=10)
+        scene_input = gr.Textbox(label="Paste Scene", lines=10)
         create_btn = gr.Button("Create Project")
         output = gr.Textbox(label="Status")
 
         create_btn.click(
             create_project,
-            inputs=[project_name, theme_input, script_input],
+            inputs=[project_name, theme_input, script_input,scene_input],
             outputs=[output]
         )
     return demo

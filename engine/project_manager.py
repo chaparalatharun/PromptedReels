@@ -1,34 +1,46 @@
 import os
 import json
-from engine.text_parser import split_script_to_chunks
+from engine.text_parser import split_script_to_chunks, split_scene_to_chunks
 
 
 def parse_script_line(line):
     ret = {"character": "",
             "picture": "random",
            }
-    if ";;;" in line:
-        line, scene, move_prompt = line.split(";;;")
-        ret["scene"] = scene
-        ret["move_prompt"] = move_prompt
     if ":" in line:
         name, line = line.split(":", 1)
         ret["character"] = name.strip()
     ret["text"] = line
     return ret
 
-def create_project(name, theme, script):
+def parse_scene_line(line):
+    ret = {}
+    if len(line.split(";;;")) > 1:
+        scene, move_prompt = line.split(";;;")
+        ret["scene"] = scene
+        ret["move_prompt"] = move_prompt
+    else:
+        ret["scene"] = line
+    return ret
+
+
+
+
+def create_project(name, theme, script,scene):
     path = create_fn(name)
-    chunks = split_script_to_chunks(script)
-    script_data = [parse_script_line(c) for c in chunks]
+    script_chunks = split_script_to_chunks(script)
+    scene_chunks = split_scene_to_chunks(scene)
+    script_data = [parse_script_line(c) for c in script_chunks]
+    scene_data =  [parse_scene_line(c) for c in scene_chunks]
 
     json_data = {
         "title": name,
         "theme": theme,
-        "script": script_data
+        "script": script_data,
+        "scene" : scene_data
     }
     save_json(json_data, os.path.join(path, "input.json"))
-    return f"Created project '{name}' with {len(chunks)} chunks."
+    return f"Created project '{name}' with {len(script_data)} script_data, with {len(scene_data)} scene_data."
 
 def create_fn(name):
     base = os.path.join("projects", name)

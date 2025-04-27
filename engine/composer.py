@@ -48,7 +48,8 @@ def resize_and_crop(clip, target_size=(1280, 720)):
         clip = clip.fx(vfx.resize, width=target_size[0])
 
     return clip.set_position(("center", "center"))
-def compose_final_video(processed_json, project_folder, output_path, insert_subtitle=True):
+
+def compose_final_video(processed_json, project_folder, output_path, insert_subtitle=True, haveChar=True):
     temp_no_sub_path = output_path.replace(".mp4", "_nosub.mp4")
     subtitle_path = os.path.join(project_folder, "subtitles.srt")
 
@@ -66,11 +67,39 @@ def compose_final_video(processed_json, project_folder, output_path, insert_subt
             video_clip = VideoFileClip(video_path)
             video_clip = resize_and_crop(video_clip, target_size=(1280, 720))
 
-            # Load and concatenate audio
+            if haveChar:
+                character = block.get("character", "")
+                picture = block.get("picture", "random")
+                character_folder = os.path.join("assets", character)
+
+                if picture == "random":
+                    images = [f for f in os.listdir(character_folder) if f.endswith((".jpg", ".png"))]
+                    if not images:
+                        print(f"⚠️ No images found for character {character}.")
+                        continue
+                    picture_file = random.choice(images)
+                else:
+                    picture_file = picture if picture.endswith((".jpg", ".png")) else picture + ".jpg"
+
+                picture_path = os.path.join(character_folder, picture_file)
+
+                if not os.path.exists(picture_path):
+                    print(f"⚠️ Picture file not found: {picture_path}")
+                    continue
+
+                img_clip = (
+                    ImageClip(picture_path)
+                    .set_duration(video_clip.duration)
+                    .resize(width=video_clip.w * 0.2)
+                    .set_position(("left", "bottom"))
+                )
+
+                video_clip = CompositeVideoClip([video_clip, img_clip])
+
+            # Merge audio
             audio_clips = [AudioFileClip(path) for path in audio_paths]
             audio_clip = concatenate_audioclips(audio_clips)
 
-            # Repeat video to match audio duration
             if video_clip.duration < audio_clip.duration:
                 repeat_count = int(audio_clip.duration // video_clip.duration) + 1
                 video_clip = concatenate_videoclips([video_clip] * repeat_count)
@@ -79,7 +108,7 @@ def compose_final_video(processed_json, project_folder, output_path, insert_subt
             final_clip = video_clip.set_audio(audio_clip)
 
             video_clips.append(final_clip)
-            print(f"✅ Processed clip {i + 1}")
+            print(f"✅ Processed clip {i + 1} {'with' if haveChar else 'without'} character image.")
 
         except Exception as e:
             print(f"❌ Error processing clip {i + 1}: {e}")
@@ -92,7 +121,6 @@ def compose_final_video(processed_json, project_folder, output_path, insert_subt
         final_video = concatenate_videoclips(video_clips, method="compose")
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-        # Step 1: Export video without subtitles
         final_video.write_videofile(
             temp_no_sub_path,
             codec="libx264",
@@ -101,7 +129,6 @@ def compose_final_video(processed_json, project_folder, output_path, insert_subt
             ffmpeg_params=["-preset", "fast"],
         )
 
-        # Step 2: Add subtitles via FFmpeg
         if insert_subtitle and os.path.exists(subtitle_path):
             add_subtitles_with_ffmpeg(temp_no_sub_path, subtitle_path, output_path)
             os.remove(temp_no_sub_path)

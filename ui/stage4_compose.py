@@ -24,7 +24,7 @@ def compose(project_name):
     compose_final_video(data, project_path, output_path)
     return f"Final video created at: {output_path}"
 
-def build_stage3_ui():
+def build_stage4_ui():
     project_selector3 = gr.Dropdown(label="Select Project", choices=get_project_choices())
     compose_btn = gr.Button("Compose Final Video")
     compose_output = gr.Textbox(label="Compose Status")

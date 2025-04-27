@@ -50,7 +50,7 @@ def refresh_dropdown_and_reset():
 
 
 
-def build_stage2_ui():
+def build_stage3_ui():
     with gr.Blocks() as demo:
         project_selector2 = gr.Dropdown(label="Select Project", choices=get_project_choices(), interactive=True)
         refresh_btn = gr.Button("🔄 Refresh Project List")
