@@ -24,13 +24,14 @@ def parse_scene_line(line):
     return ret
 
 
-
-
 def create_project(name, theme, script,scene):
     path = create_fn(name)
     script_chunks = split_script_to_chunks(script)
     scene_chunks = split_scene_to_chunks(scene)
-    script_data = [parse_script_line(c) for c in script_chunks]
+    script_data = [{}] * len(script_chunks)
+    for i,c in enumerate(script_chunks):
+        script_data[i] = parse_script_line(c)
+        script_data[i]["script_idx"] = i
     scene_data =  [parse_scene_line(c) for c in scene_chunks]
 
     json_data = {

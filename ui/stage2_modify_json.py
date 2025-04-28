@@ -209,12 +209,12 @@ def build_stage2_ui():
                 if not url:
                     print(f"Failed to generate image for block {global_idx}")
                     return None
-                save_path = os.path.join(projects_dir, project_name, f"{global_idx}.png")
+                save_path = os.path.join(projects_dir, project_name, f"image/{global_idx}.png")
                 try:
                     img_data = requests.get(url).content
                     with open(save_path, 'wb') as handler:
                         handler.write(img_data)
-                    block["image"] = f"{global_idx}.png"
+                    block["image"] = f"image/{global_idx}.png"
                     save_json(data, input_path)
                 except Exception as e:
                     print(f"Error downloading image: {e}")
