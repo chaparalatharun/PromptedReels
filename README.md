@@ -139,12 +139,9 @@ Each description is then used to search for relevant stock videos using the Pexe
 
 ### Pexels API Integration
 
-We fetch top-matching free stock video clips based on these LLM-generated descriptions and trim them to match the assigned duration. Embedding-based similarity is used to choose top candidates.
+We fetch top-matching free stock video clips using LLM-generated scene descriptions. These are trimmed to fit each scene's target duration. To improve quality, we compute embedding similarity between the prompt and the video metadata (title, tags, etc.) to select top candidates.
 
-```
-
-### Pexels API Integration
-We fetch top-matching free stock video clips and trim them to fit the target duration. The best match is selected using embedding-based similarity.
+A final reranker (GPT-4o) then selects the best-matching clip using both metadata and visual previews.
 
 ---
 
@@ -153,6 +150,7 @@ We fetch top-matching free stock video clips and trim them to fit the target dur
 In `api/services/video_reranker.py`, we use GPT-4o to select the best-matching video from a set of candidates based on the narration block, LLM-generated scene description, optional user prompt, and available Pexels metadata.
 
 **Flow:**
+
 1. Send narration block, scene description, and user prompt
 2. Attach candidate video thumbnails as visual proxies
 3. Provide metadata for each video (title, tags, duration, etc.)
@@ -165,46 +163,46 @@ This adds a final semantic filter to ensure the most contextually accurate video
 ## 🎨 Final Composition
 
 ### 1. Block-Level Output
+
 Each narration block produces:
-- `audio/block_0.mp3`
-- `video/block_0.mp4`
+
+* `audio/block_0.mp3`
+* `video/block_0.mp4`
 
 ### 2. Stitching
+
 Using FFmpeg or `moviepy`, we merge blocks into:
-- `full_video.mp4`
-- `subtitles.srt` (optional)
+
+* `full_video.mp4`
+* `subtitles.srt` (optional)
 
 ---
 
 ## 📁 Project Folder Structure
 
 ```
-
-my\_project/
+my_project/
 ├── audio/
-│   ├── block\_0.mp3
-│   └── block\_1.mp3
+│   ├── block_0.mp3
+│   └── block_1.mp3
 ├── video/
-│   ├── block\_0.mp4
-│   └── block\_1.mp4
+│   ├── block_0.mp4
+│   └── block_1.mp4
 ├── processed.json
-└── full\_video.mp4
-
+└── full_video.mp4
 ```
 
 ---
 
-
-
 ## 🌱 Future Roadmap
 
-- [ ] Music/ambient background support
-- [ ] Subtitle alignment improvements
-- [ ] Optional B-roll layering
-- [ ] Platform publishing (YouTube, TikTok)
+* [ ] Music/ambient background support
+* [ ] Subtitle alignment improvements
+* [ ] Optional B-roll layering
+* [ ] Platform publishing (YouTube, TikTok)
 
 ---
 
 Tharun Chaparala
 
-```
+---
