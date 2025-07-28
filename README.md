@@ -72,7 +72,7 @@ npm run dev
 
 This will start the frontend on `http://localhost:5173` (default for Vite or similar tooling).
 
-Make sure your backend FastAPI server is also running on port 8000 to enable API calls.
+This setup runs both backend and frontend together using a single command, so you don't need to start the FastAPI server separately.
 
 ---
 
@@ -82,10 +82,10 @@ Make sure your backend FastAPI server is also running on port 8000 to enable API
 graph TD
     A[Script Input] --> B[Split into Blocks]
     B --> C[TTS: ElevenLabs API or GPT-SoVITS]
-    B --> D[LLM generates visual prompt]
+    B --> D[LLM generates visual scenes]
     D --> E[Pexels API fetch]
     E --> F[Download + Trim Videos]
-    F --> G[Visual Reranker (GPT-4o + Thumbnails)]
+    F --> G[Video Reranker (GPT-4o + Metadata)]
     C --> H[Final Composition]
     G --> H
     H --> I[Render Final Reel]
@@ -205,7 +205,6 @@ my\_project/
 
 ---
 
-## 🙌 Credits
 Tharun Chaparala
 
 ```
