@@ -207,6 +207,8 @@ my_project/
 
 ---
 
-Tharun Chaparala
+## 🙌 Credits
+
+This project is a standalone rework by Tharun Chaparala, originally forked from a different codebase. Only `api/api.py` and `start_server.py` are retained; all other modules were redesigned or replaced.
 
 ---
