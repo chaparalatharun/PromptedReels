@@ -1,199 +1,162 @@
-# VideoAutoMaker 🎥🤖
+# Prompted Reels 🎥🤖
 
-VideoAutoMaker is an automated AI-powered video generation pipeline that takes a script and turns it into fully-formed video segments with matching visuals, TTS audio, and metadata — ready for platforms like YouTube, TikTok, and Bilibili.
-
-- Text-To-Video Model: **Wan-AI/Wan2.1-T2V-14B-Turbo**
-- Audio Model: **GPT-SoVITS(Fine-Tuning)**
-- LLM Model: **DeepSeekV3**
-
-## 🖼️ Web UI Preview
-
-![UI Screenshot](example/picture/ui1.png) <!-- replace with actual image path -->
-
-📺 **Example video (Chinese):**
-
-[![Watch the demo video](https://img.youtube.com/vi/RjH_D1CPzps/0.jpg)](https://www.youtube.com/watch?v=RjH_D1CPzps)
-
-
-📺 **Example video (English):**
-
-![Video_clip](example/picture/video_en.png) <!-- replace with actual image path -->
-
+**Prompted Reels** is an AI-powered pipeline for creating faceless short-form videos (Reels, Shorts, TikToks) from scripts. It combines voice synthesis, visual matching, and LLM-powered scene generation to automate the video creation process.
 
 ---
 
-## 📄 Project Paper
+## 🚀 Getting Started
 
-We’ve written a paper describing the full pipeline, model integration, and design principles.
+### 1. Clone the Project
 
-[📄 Read the full paper (PDF)](example/paper/paper.pdf)
+```bash
+git clone https://github.com/yourusername/prompted-reels.git
+cd prompted-reels
+```
+
+### 2. Install Dependencies
+
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+pip install -r requirements.txt
+```
+
+### 3. Setup Environment Variables
+
+Create a `.env` file and fill in:
+
+```env
+PEXELS_API_KEY=your_pexels_key
+TEXT2VIDEO_API_KEY=your_open_sora_or_gen2_key
+ELEVEN_LABS_API_KEY=your_eleven_labs_key
+LLM_API_KEY=your_llm_key  # DeepSeek or Claude
+```
+
+### 4. Start the FastAPI Server
+
+```bash
+uvicorn api.main:app --reload
+```
 
 ---
 
-## ✨ Features
+## 📐 Architecture Overview
 
-- 🔊 **Text-to-Speech**: Converts script into speech using GPT-SoVITS or fine-tuned character voices
-- 🎬 **Visual Matching**: LLM-generated search terms fetch relevant video clips from Pexels
-- 📥 **HD Video Download**: Auto fetches the best matching stock videos
-- 🧠 **Scene Matching with LLM**: Script lines become high-quality video prompts
-- 🎞️ **Text-to-Video Generation**: Uses models like Open-Sora for AI-generated visuals
-- ✅ **JSON + Media Pipeline**: Supports block-level audio/video regeneration
-- ⚙️ **FastAPI-based Control**: Full programmatic control via RESTful endpoints
-
----
-
-## ⚙️ Pipeline Steps 
-
-
-![pipeline](example/picture/pipeline.png) <!-- replace with actual image path -->
-
-
+```mermaid
+graph TD
+    A[Script Input] --> B[Split into Blocks]
+    B --> C[TTS: ElevenLabs API or GPT-SoVITS]
+    B --> D[LLM generates visual prompt]
+    D --> E[Pexels API fetch]
+    E --> F[Download + Trim Videos]
+    C --> G[Final Composition]
+    F --> G
+    G --> H[Render Final Reel]
+```
 
 ---
 
-## 📦 Folder Structure
+## 🎤 Voice Generation (TTS)
 
-Your project output will look like:
+### 1. ElevenLabs (Recommended)
 
-```text
+* High-quality, real-time speech synthesis
+* Custom voices or stock narrator
+
+Request example:
+
+```bash
+POST https://api.elevenlabs.io/v1/text-to-speech/<voice_id>
+Authorization: Bearer $ELEVEN_LABS_API_KEY
+```
+
+### 2. GPT-SoVITS
+
+* Alternative open-source model for voice cloning
+* Can be self-hosted and fine-tuned on character voices
+
+---
+
+## 🎞️ Visual Matching
+
+### LLM-Powered Scene Matching
+
+Each narration block is sent to the LLM to generate a video search prompt. Example prompt:
+
+```
+"Given a narration line, return a relevant search phrase for the Pexels API to find a matching video clip."
+```
+
+### Pexels API Integration
+
+We fetch top-matching free stock video clips and trim them to fit the target duration. The best match is selected using embedding-based similarity.
+
+---
+
+## 🎨 Final Composition
+
+### 1. Block-Level Output
+
+Each narration block produces:
+
+* `audio/block_0.mp3`
+* `video/block_0.mp4`
+
+### 2. Stitching
+
+Using FFmpeg or `moviepy`, we merge blocks into:
+
+* `full_video.mp4`
+* `subtitles.srt` (optional)
+
+---
+
+## 📁 Project Folder Structure
+
+```
 my_project/
 ├── audio/
-│   ├── myproj_1.mp3
-│   └── myproj_2.mp3
+│   ├── block_0.mp3
+│   └── block_1.mp3
 ├── video/
-│   ├── myproj_1.mp4
-│   └── myproj_2.mp4
+│   ├── block_0.mp4
+│   └── block_1.mp4
 ├── processed.json
-└── subtitles.srt
+└── full_video.mp4
 ```
 
 ---
 
-## 🧠 LLM Prompt Format
+## 🧪 API Usage (FastAPI)
 
-```text
-"Given a text script clip, I want to search the corresponding video clip that can match the script, for presentation. Give me the video searching sentence in Pexels API."
+### List Projects
+
+```bash
+GET /projects
+```
+
+### Create Project
+
+```bash
+POST /create_project
+```
+
+### Generate Media
+
+```bash
+POST /generate_media
+```
+
+### Process Block
+
+```bash
+POST /process_block
+```
+
+### Compose Final Video
+
+```bash
+POST /compose?project_name=xyz
 ```
 
 ---
-
-## 🔐 API Configuration
-
-Update your environment or config with keys:
-
-```python
-PEXELS_API_KEY = "your_pexels_key"
-LLM_API_HEADERS = {
-  "Authorization": "Bearer your_llm_token",
-  "Content-Type": "application/json"
-}
-TEXT2VIDEO_API_KEY = "your_text2video_key"
-```
-
----
-
-## 🧪 API Endpoints (FastAPI)
-
-Start server:
-
-```bash
-python start_server.py
-```
-
-### ✅ 1. List Projects
-
-```bash
-curl http://localhost:8000/projects
-```
-
-### ✅ 2. Create a Project
-
-```bash
-curl -X POST http://localhost:8000/create_project \
-  -H "Content-Type: application/json" \
-  -d '{
-    "project_name": "demo_project",
-    "theme": "宇宙起源",
-    "script": "宇宙诞生于一次大爆炸。\\n生命起源于海洋。"
-}'
-```
-
-### ✅ 3. Generate Media
-
-```bash
-curl -X POST http://localhost:8000/generate_media \
-  -H "Content-Type: application/json" \
-  -d '{
-    "project_name": "demo_project",
-    "reGen_audio": true,
-    "reGen_video": true,
-    "theme": "AI Documentary"
-}'
-```
-
-### ✅ 4. Process a Single Block
-
-```bash
-curl -X POST http://localhost:8000/process_block \
-  -H "Content-Type: application/json" \
-  -d '{
-    "project_name": "demo_project",
-    "block_index": 0,
-    "reGen_audio": true,
-    "reGen_video": false
-}'
-```
-
-### ✅ 5. Get Project JSON
-
-```bash
-curl http://localhost:8000/project_json/demo_project
-```
-
-### ✅ 6. Update Project JSON
-
-```bash
-curl -X POST http://localhost:8000/update_project_json \
-  -H "Content-Type: application/json" \
-  -d '{
-    "project_name": "demo_project",
-    "data": {
-      "theme": "Updated Theme",
-      "script": [{"text": "New narration line", "character": "Narrator"}]
-    }
-}'
-```
-
-### ✅ 7. Compose Final Video
-
-```bash
-curl -X POST "http://localhost:8000/compose?project_name=demo_project"
-```
-
----
-
-## 🧩 Requirements
-
-- Python 3.9+
-- Docker (optional)
-- API Keys:
-  - TTS endpoint (e.g., GPT-SoVITS)
-  - Pexels video API
-  - LLM (e.g., DeepSeek, Claude)
-  - (Optional) Text-to-video service like Open-Sora, Gen-2
-
----
-
-## 🚧 Future Improvements
-
-- Subtitle timestamp smoothing (via Whisper)
-- FFmpeg-based auto merge (video + audio + srt)
-- Music / ambient tracks
-- Full pipeline: YouTube/Bilibili upload
-
----
-
-## 💡 Credits
-
-Built with ❤️ by NP_123
-Powered by GPT, Pexels, and open tools like SoVITS and FastAPI.
