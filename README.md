@@ -196,8 +196,12 @@ my_project/
 
 ## 🌱 Future Roadmap
 
+* [ ] Local model integration (LLMs, TTS, reranker)
+* [ ] AI-generated video synthesis using models like Open-Sora
 * [ ] Music/ambient background support
-* [ ] Subtitle alignment improvements
+* [ ] Subtitle alignment and smoothing improvements
+* [ ] Complex scene scripting (camera motion, transitions, pacing)
+* [ ] Frontend UI improvements (storyboard view, timeline editor)
 * [ ] Optional B-roll layering
 * [ ] Platform publishing (YouTube, TikTok)
 
