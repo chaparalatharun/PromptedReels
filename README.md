@@ -85,7 +85,7 @@ graph TD
     B --> D[LLM generates visual scenes]
     D --> E[Pexels API fetch]
     E --> F[Download + Trim Videos]
-    F --> G[Video Reranker (GPT-4o + Metadata)]
+    F --> G[Video Reranker]
     C --> H[Final Composition]
     G --> H
     H --> I[Render Final Reel]
