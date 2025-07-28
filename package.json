@@ -1,0 +1,25 @@
+{
+  "name": "videoautomaker",
+  "version": "1.0.0",
+  "description": "VideoAutoMaker is an automated AI-powered video generation pipeline that takes a script and turns it into fully-formed video segments with matching visuals, TTS audio, and metadata — ready for platforms like YouTube, TikTok, and Bilibili.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently -k -n API,WEB -c blue,green \"cross-env PYTHONUNBUFFERED=1 PYTHONPATH=. ./venv/bin/python -m uvicorn api.api:app --reload --host 0.0.0.0 --port 8000\" \"npm --prefix frontend run dev\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.0",
+    "cross-env": "^10.0.0",
+    "postcss": "^8.5.6"
+  },
+  "dependencies": {
+    "lucide-react": "^0.526.0",
+    "next": "^15.4.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  }
+}

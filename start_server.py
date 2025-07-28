@@ -3,7 +3,7 @@ import uvicorn
 
 def main():
     uvicorn.run(
-        "api.api:app",          # ← Add one more `api.` to reach the actual file
+        "api.api:app",
         host="0.0.0.0",
         port=8000,
         reload=True
