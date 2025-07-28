@@ -13,15 +13,24 @@ git clone https://github.com/yourusername/prompted-reels.git
 cd prompted-reels
 ```
 
-### 2. Install Dependencies
+---
+
+## 🐍 Backend Setup (FastAPI)
+
+### 2. Create Python Virtual Environment
 
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+```
+
+### 3. Install Python Dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-### 3. Setup Environment Variables
+### 4. Setup Environment Variables
 
 Create a `.env` file and fill in:
 
@@ -30,9 +39,10 @@ PEXELS_API_KEY=your_pexels_key
 TEXT2VIDEO_API_KEY=your_open_sora_or_gen2_key
 ELEVEN_LABS_API_KEY=your_eleven_labs_key
 LLM_API_KEY=your_llm_key  # DeepSeek or Claude
+OPENAI_API_KEY=your_openai_key  # For GPT-4o reranking
 ```
 
-### 4. Start the FastAPI Server
+### 5. Start the FastAPI Server
 
 ```bash
 uvicorn api.main:app --reload
@@ -40,7 +50,33 @@ uvicorn api.main:app --reload
 
 ---
 
-## 📐 Architecture Overview
+## 🖥️ Frontend Setup (React)
+
+### 1. Navigate to Frontend Directory
+
+```bash
+cd frontend  # or the directory where your frontend lives
+```
+
+### 2. Install Node.js Dependencies
+
+```bash
+npm install
+```
+
+### 3. Run the Development Server
+
+```bash
+npm run dev
+```
+
+This will start the frontend on `http://localhost:5173` (default for Vite or similar tooling).
+
+Make sure your backend FastAPI server is also running on port 8000 to enable API calls.
+
+---
+
+## 📊 Architecture Overview
 
 ```mermaid
 graph TD
@@ -49,9 +85,10 @@ graph TD
     B --> D[LLM generates visual prompt]
     D --> E[Pexels API fetch]
     E --> F[Download + Trim Videos]
-    C --> G[Final Composition]
-    F --> G
-    G --> H[Render Final Reel]
+    F --> G[Visual Reranker (GPT-4o + Thumbnails)]
+    C --> H[Final Composition]
+    G --> H
+    H --> I[Render Final Reel]
 ```
 
 ---
@@ -77,86 +114,98 @@ Authorization: Bearer $ELEVEN_LABS_API_KEY
 
 ---
 
-## 🎞️ Visual Matching
+## 🎮 Visual Matching
 
-### LLM-Powered Scene Matching
+### Scene Planning with GPT-4o
 
-Each narration block is sent to the LLM to generate a video search prompt. Example prompt:
+Each narration block is passed through an LLM to generate a sequence of specific visual scenes using the `plan_visual_scenes` function (see `api/services/scene_planner.py`).
 
+The LLM receives:
+
+* The full narration block
+* Optional user prompt or visual guidance
+* Total narration duration (e.g., 8 seconds)
+
+The model returns a structured JSON list like:
+
+```json
+[
+  { "description": "man brushing teeth in mirror", "target_sec": 4 },
+  { "description": "alarm clock ringing at 6 AM", "target_sec": 4 }
+]
 ```
-"Given a narration line, return a relevant search phrase for the Pexels API to find a matching video clip."
-```
+
+Each description is then used to search for relevant stock videos using the Pexels API.
 
 ### Pexels API Integration
 
+We fetch top-matching free stock video clips based on these LLM-generated descriptions and trim them to match the assigned duration. Embedding-based similarity is used to choose top candidates.
+
+```
+
+### Pexels API Integration
 We fetch top-matching free stock video clips and trim them to fit the target duration. The best match is selected using embedding-based similarity.
+
+---
+
+## 🌍 Video Reranking with GPT-4o
+
+In `api/services/video_reranker.py`, we use GPT-4o to select the best-matching video from a set of candidates based on the narration block, LLM-generated scene description, optional user prompt, and available Pexels metadata.
+
+**Flow:**
+1. Send narration block, scene description, and user prompt
+2. Attach candidate video thumbnails as visual proxies
+3. Provide metadata for each video (title, tags, duration, etc.)
+4. GPT-4o uses visual and textual context to select the best-matching video index (0-based)
+
+This adds a final semantic filter to ensure the most contextually accurate video clip is selected for each block, combining both visual inspection and metadata reasoning from the Pexels API.
 
 ---
 
 ## 🎨 Final Composition
 
 ### 1. Block-Level Output
-
 Each narration block produces:
-
-* `audio/block_0.mp3`
-* `video/block_0.mp4`
+- `audio/block_0.mp3`
+- `video/block_0.mp4`
 
 ### 2. Stitching
-
 Using FFmpeg or `moviepy`, we merge blocks into:
-
-* `full_video.mp4`
-* `subtitles.srt` (optional)
+- `full_video.mp4`
+- `subtitles.srt` (optional)
 
 ---
 
 ## 📁 Project Folder Structure
 
 ```
-my_project/
+
+my\_project/
 ├── audio/
-│   ├── block_0.mp3
-│   └── block_1.mp3
+│   ├── block\_0.mp3
+│   └── block\_1.mp3
 ├── video/
-│   ├── block_0.mp4
-│   └── block_1.mp4
+│   ├── block\_0.mp4
+│   └── block\_1.mp4
 ├── processed.json
-└── full_video.mp4
+└── full\_video.mp4
+
 ```
 
 ---
 
-## 🧪 API Usage (FastAPI)
 
-### List Projects
 
-```bash
-GET /projects
-```
+## 🌱 Future Roadmap
 
-### Create Project
-
-```bash
-POST /create_project
-```
-
-### Generate Media
-
-```bash
-POST /generate_media
-```
-
-### Process Block
-
-```bash
-POST /process_block
-```
-
-### Compose Final Video
-
-```bash
-POST /compose?project_name=xyz
-```
+- [ ] Music/ambient background support
+- [ ] Subtitle alignment improvements
+- [ ] Optional B-roll layering
+- [ ] Platform publishing (YouTube, TikTok)
 
 ---
+
+## 🙌 Credits
+Tharun Chaparala
+
+```
