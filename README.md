@@ -1,6 +1,6 @@
 # Prompted Reels 🎥🤖
 
-**Prompted Reels** is an AI-powered pipeline for creating faceless short-form videos (Reels, Shorts, TikToks) from scripts. It combines voice synthesis, visual matching, and LLM-powered scene generation to automate the video creation process.
+**Prompted Reels** is an AI-powered pipeline for turning plain ideas into structured, faceless short-form videos (Reels, Shorts, TikToks). It combines voice synthesis, visual matching, and LLM-powered scene generation to automate the video creation process.
 
 ---
 
@@ -9,8 +9,8 @@
 ### 1. Clone the Project
 
 ```bash
-git clone https://github.com/yourusername/prompted-reels.git
-cd prompted-reels
+git clone https://github.com/chaparalatharun/PromptedReels.git
+cd PromptedReels
 ```
 
 ---
@@ -36,9 +36,7 @@ Create a `.env` file and fill in:
 
 ```env
 PEXELS_API_KEY=your_pexels_key
-TEXT2VIDEO_API_KEY=your_open_sora_or_gen2_key
 ELEVEN_LABS_API_KEY=your_eleven_labs_key
-LLM_API_KEY=your_llm_key  # DeepSeek or Claude
 OPENAI_API_KEY=your_openai_key  # For GPT-4o reranking
 ```
 
@@ -80,12 +78,12 @@ This setup runs both backend and frontend together using a single command, so yo
 
 ```mermaid
 graph TD
-    A[Script Input] --> B[Split into Blocks]
+    A[Narration Input] --> B[Split into Blocks]
     B --> C[TTS: ElevenLabs API or GPT-SoVITS]
     B --> D[LLM generates visual scenes]
     D --> E[Pexels API fetch]
     E --> F[Download + Trim Videos]
-    F --> G[Video Reranker]
+    F --> G[Video Reranker - GPT-4o + Metadata]
     C --> H[Final Composition]
     G --> H
     H --> I[Render Final Reel]
@@ -99,13 +97,6 @@ graph TD
 
 * High-quality, real-time speech synthesis
 * Custom voices or stock narrator
-
-Request example:
-
-```bash
-POST https://api.elevenlabs.io/v1/text-to-speech/<voice_id>
-Authorization: Bearer $ELEVEN_LABS_API_KEY
-```
 
 ### 2. GPT-SoVITS
 
@@ -126,7 +117,7 @@ The LLM receives:
 * Optional user prompt or visual guidance
 * Total narration duration (e.g., 8 seconds)
 
-The model returns a structured JSON list like:
+Returns structured JSON like:
 
 ```json
 [
@@ -139,7 +130,7 @@ Each description is then used to search for relevant stock videos using the Pexe
 
 ### Pexels API Integration
 
-We fetch top-matching free stock video clips using LLM-generated scene descriptions. These are trimmed to fit each scene's target duration. To improve quality, we compute embedding similarity between the prompt and the video metadata (title, tags, etc.) to select top candidates.
+We fetch top-matching stock video clips using scene descriptions. These are trimmed to fit the scene's target duration. To improve quality, we compute embedding similarity between the prompt and the video metadata (title, tags, etc.) to select top candidates.
 
 A final reranker (GPT-4o) then selects the best-matching clip using both metadata and visual previews.
 
@@ -147,16 +138,14 @@ A final reranker (GPT-4o) then selects the best-matching clip using both metadat
 
 ## 🌍 Video Reranking with GPT-4o
 
-In `api/services/video_reranker.py`, we use GPT-4o to select the best-matching video from a set of candidates based on the narration block, LLM-generated scene description, optional user prompt, and available Pexels metadata.
+In `api/services/video_reranker.py`, we use GPT-4o to select the best-matching video from a set of candidates based on the narration block, scene description, user prompt, and Pexels metadata.
 
 **Flow:**
 
 1. Send narration block, scene description, and user prompt
 2. Attach candidate video thumbnails as visual proxies
 3. Provide metadata for each video (title, tags, duration, etc.)
-4. GPT-4o uses visual and textual context to select the best-matching video index (0-based)
-
-This adds a final semantic filter to ensure the most contextually accurate video clip is selected for each block, combining both visual inspection and metadata reasoning from the Pexels API.
+4. GPT-4o selects the most contextually accurate video clip
 
 ---
 
@@ -209,6 +198,4 @@ my_project/
 
 ## 🙌 Credits
 
-This project is a standalone rework by Tharun Chaparala, originally forked from a different codebase. Only `api/api.py` and `start_server.py` are retained; all other modules were redesigned or replaced.
-
----
+This project is a complete rework by **Tharun Chaparala**. Although originally forked, none of the original code remains — even `api/api.py` and `start_server.py` were rewritten from scratch.
